@@ -1,6 +1,7 @@
 import Multisem.Grammar
 import Multisem.Text.Macros -- contains ContextTree
 open Cat
+set_option synthInstance.checkSynthOrder false
 
 namespace TreeSpecs
 

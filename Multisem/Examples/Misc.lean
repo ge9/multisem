@@ -3,6 +3,10 @@ import Multisem.HeytingAlgebras
 import Multisem.TemporalLogic
 import Multisem.Text.Macros
 import Multisem.Lexicon
+
+import Multisem.TreeSynth
+open TreeSpecs
+
 open Cat
 
 
@@ -109,5 +113,3 @@ theorem exmisc2' : pspec [| every natural is nonnegative and is nonnegative |] :
 def every_natural_is_odd_or_even := (pspec ("every" # ("natural" # ("is" # ("odd" # ("or" # "even"))))))
 @[simp]
 def every_natural_is_odd_or_even3 := (pspec ("every" # ("natural" # ("is" # ("odd" # ("or" # "even"))))))
-
-
