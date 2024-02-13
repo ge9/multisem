@@ -7,6 +7,19 @@ import Lean
 
 universe u v t
 
+inductive ExprNat : Type
+| mk (n: Nat) : ExprNat
+abbrev My1Data := ExprNat
+def My1String := Sum String My1Data
+instance : Coe String My1String where
+  coe a := Sum.inl a
+instance : Coe My1Data My1String where
+  coe n := Sum.inr n
+instance : Coe Nat My1String where
+  coe n := Sum.inr ⟨n⟩
+def My1String.getMyStr : My1String → String
+| Sum.inl a => a
+| Sum.inr _ => "0123"
 /--
 The enumeration of supported prepositional phrase varieties for English
 -/
@@ -14,6 +27,8 @@ inductive PPType : Type := | IN | INTO | TO | FROM | OF | OFN
 deriving instance Repr for PPType
 inductive Cat.{q} : Type (q+1)  :=
 | S : Cat
+| TactS : Cat
+| TactS2 : Cat
 | NP : forall {x:Type q}, Cat
 | ADJ : forall {x:Type q}, Cat
 | CN : forall {x:Type q}, Cat
@@ -67,7 +82,7 @@ instance CatMod.{q} : Mod (Cat.{q}) where
 --deriving instance Repr for Cat
 def catrepr (c:Cat) : Lean.Format :=
     match c with
-    | S => "S" | NP => "NP" | ADJ => "ADJ" | CN => "CN" 
+    | S => "S" | TactS => "S" | TactS2 => "S" | NP => "NP" | ADJ => "ADJ" | CN => "CN" 
     | PP pp => "PP["++(Repr.reprPrec pp 0)++"]"
     | Ref l r => "("++(catrepr l)++" % "++(catrepr r)++")"
     | rslash l r => "("++(catrepr l)++" / "++(catrepr r)++")"
@@ -89,11 +104,15 @@ instance catRepr : Repr Cat where
 def polyunit.{α} : Type α := ULift Unit
 def pu.{α} : polyunit.{α} := ULift.up ()
 
+abbrev MyExprData := Lean.AssocList Nat (Lean.Syntax)
+
 -- We do Lambek-style interpretation of lslash
 @[simp]
 def interp.{q} (P:Type q) (c:Cat.{q}) : Type q :=
   match c with
   | S => P
+  | TactS => Lean.Elab.Tactic.TacticM (Lean.TSyntax `tactic) × P
+  | TactS2 => ULift.{q,0} (ReaderT MyExprData Lean.Elab.Tactic.TacticM (Lean.TSyntax `tactic))
   | @NP x => x
   | @Var x _ => x
   | @ADJ x => x -> P
@@ -143,7 +162,7 @@ instance rSlashHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[Su
 instance refHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C' % C) where
   combineProps op d1 d2 := fun x => SurfaceHeytingAlgebra.combineProps n op (d1 x) (d2 x)
 
-class lexicon.{q} (P : Type q) (w:String) (c:Cat.{q}) where
+class lexicon.{q} (P : Type q) (w:My1String) (c:Cat.{q}) where
   denotation : interp P c 
 attribute [simp] lexicon.denotation
 
@@ -182,7 +201,7 @@ macro "anylex" n:ident "as" c:term : command =>
 namespace LexSyntaxExperiments
   -- One other possible limitation of this macro is that it only enters identifier-bound entities, so you can't directly register 15. But this is nicer that manually specifying 
   def fifteen : Nat := 15
-  lex fifteen for Prop as @Cat.NP Nat
+  --lex fifteen for Prop as @Cat.NP Nat
 
-  anylex fifteen as @Cat.NP Nat
+  --anylex fifteen as @Cat.NP Nat
 end LexSyntaxExperiments

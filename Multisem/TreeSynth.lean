@@ -5,7 +5,7 @@ set_option synthInstance.checkSynthOrder false
 
 namespace TreeSpecs
 
-class Synth (P:Type u)(ws:ContextTree String) (c:Cat) where
+class Synth (P:Type u)(ws:ContextTree My1String) (c:Cat) where
   denotation : interp P c
   stringRep : Lean.Format
 attribute [simp] Synth.denotation
@@ -13,14 +13,14 @@ attribute [simp] Synth.denotation
 -- The Repr typeclass is how Lean displays results of #eval commands.
 -- Implementing this (and for that matter, requiring Synth.stringRep)
 -- lets us print the result of a call to specwitness
-instance (P:Type u)(ws:ContextTree String) (c:Cat) : Repr (Synth P ws c) where
+instance (P:Type u)(ws:ContextTree My1String) (c:Cat) : Repr (Synth P ws c) where
   reprPrec inst n := inst.stringRep
 
 
 
-instance SynthLex (P:Type u){w:String}{C:Cat}[l:lexicon P w C] : Synth P (ContextTree.one w) C where
+instance SynthLex (P:Type u){w:My1String}{C:Cat}[l:lexicon P w C] : Synth P (ContextTree.one w) C where
   denotation := lexicon.denotation w
-  stringRep := "lexicon<"++w++":"++ (reprPrec C 0) ++">"
+  stringRep := "lexicon<"++w.getMyStr++":"++ (reprPrec C 0) ++">"
 
 instance SynthRApp (P:Type u){s1 s2 c1 c2}[L:Synth P s1 (c1 // c2)][R:Synth P s2 c2] : Synth P (s1#s2) c1 where
   denotation := L.denotation R.denotation --@Synth.denotation P s1 (c1 // c2) L (Synth.denotation s2)
@@ -157,14 +157,14 @@ end Jacobson
 
 
 @[simp]
-def dbgspec (l:ContextTree String) (C:Cat) [sem:Synth Prop l C] : interp Prop C :=
+def dbgspec (l:ContextTree My1String) (C:Cat) [sem:Synth Prop l C] : interp Prop C :=
   sem.denotation
 @[simp]
-def pspec (l:ContextTree String) [HeytingAlgebra Prop][sem:Synth Prop l S] : Prop :=
+def pspec (l:ContextTree My1String) [HeytingAlgebra Prop][sem:Synth Prop l S] : Prop :=
   sem.denotation
 @[simp]
-def specwitness (P:Type u)(l:ContextTree String) [HeytingAlgebra P][sem:Synth P l S] : Synth P l S := sem
+def specwitness (P:Type u)(l:ContextTree My1String) [HeytingAlgebra P][sem:Synth P l S] : Synth P l S := sem
 @[simp]
-def dbgspecwitness (P:Type u)(l:ContextTree String)(C:Cat) [HeytingAlgebra P][sem:Synth P l C] : Synth P l C := sem
+def dbgspecwitness (P:Type u)(l:ContextTree My1String)(C:Cat) [HeytingAlgebra P][sem:Synth P l C] : Synth P l C := sem
 
 end TreeSpecs
