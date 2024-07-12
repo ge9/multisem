@@ -10,6 +10,8 @@ import Multisem.DiffListEncoding
 set_option synthInstance.maxHeartbeats 2000000
 set_option maxHeartbeats 2000000
 
-local instance : CurrentString [|every natural is nonnegative and some natural is even|] where
-
-def bench_vs_coq := dspec [|every natural is nonnegative and some natural is even|]
+local instance : CurrentString [| every natural is nonnegative or even|] where
+--def even(n) = n...
+theorem misc4 : dspec [| every natural is nonnegative or even|] :=
+  by simp
+--def bench_vs_coq := dspec [|every natural is nonnegative and some natural is even|]

@@ -2,7 +2,13 @@ import Multisem.Text.Macros
 import Multisem.Lexicon
 import Multisem.CaseStudies.VFA.Sort
 import Multisem.CaseStudies.VFA.MultiSet
+import Multisem.TreeSynth
 
+set_option checkBinderAnnotations false
+open multisem_fix_ns
+set_option synthInstance.checkSynthOrder false
+open TreeSpecs
+open Cat
 
   -- Equivalence of Permutation and Multiset Specifications
   -- These require dealing with two lists manipulated in various ways
@@ -19,16 +25,16 @@ import Multisem.CaseStudies.VFA.MultiSet
       Much of the difficulty and subtlety of grammatical treatments of anaphora is ensuring that arbitrary stacking is handled, regardless of depth, ordering, or repetition.
       The systems I've studied in detail (notably Jacobson's but seemingly also Moortgat's, and based on initial investigations Barker and Shan's) seem to handle this by allowing arbitrary lifting of "whole" fragments to assume compatibility with an arbitrary hole. But of course this blows up search pretty bad because a lot of time is wasted lifting terms that don't need it (and this is with her restriction to NP referents).
     -/
-    instance SynthRAppVar (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 (c1 // c2)][R:Synth P s2 (c2 % (@Var T v))] : Synth P (s1#s2) (c1 % (@Var T v)) where
-      denotation := λ (t:T) => @Synth.denotation P s1 (c1 // c2) L ((@Synth.denotation _ s2 _ R) t)
+    instance SynthRAppVar (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 (c1 /// c2)][R:Synth P s2 (c2 % (@Var T v))] : Synth P (s1#s2) (c1 % (@Var T v)) where
+      denotation := λ (t:T) => @Synth.denotation P s1 (c1 /// c2) L ((@Synth.denotation _ s2 _ R) t)
       stringRep := "(SynthRAppVar "++L.stringRep++" "++R.stringRep++")"
-    instance SynthRAppVarF (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 ((c1 // c2) % (@Var T v))][R:Synth P s2 (c2)] : Synth P (s1#s2) (c1 % (@Var T v)) where
+    instance SynthRAppVarF (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 ((c1 /// c2) % (@Var T v))][R:Synth P s2 (c2)] : Synth P (s1#s2) (c1 % (@Var T v)) where
       denotation := λ (t:T) => L.denotation t (Synth.denotation s2) 
       stringRep := "(SynthRAppVarF "++L.stringRep++" "++R.stringRep++")"
-    instance SynthLAppVar (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 (c1 % (@Var T v))][R:Synth P s2 (c1 ∖ c2)] : Synth P (s1#s2) (c2 % (@Var T v)) where
+    instance SynthLAppVar (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 (c1 % (@Var T v))][R:Synth P s2 (c1 ∖∖ c2)] : Synth P (s1#s2) (c2 % (@Var T v)) where
       denotation := λ (t:T) => R.denotation (L.denotation t)
       stringRep := "(SynthLAppVar "++L.stringRep++" "++R.stringRep++")"
-    instance SynthLAppVarF (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 (c1)][R:Synth P s2 ((c1 ∖ c2) % (@Var T v))] : Synth P (s1#s2) (c2 % (@Var T v)) where
+    instance SynthLAppVarF (P:Type u){s1 s2 c1 c2}{v}{T}[L:Synth P s1 (c1)][R:Synth P s2 ((c1 ∖∖ c2) % (@Var T v))] : Synth P (s1#s2) (c2 % (@Var T v)) where
       denotation := λ (t:T) => R.denotation t (L.denotation)
       stringRep := "(SynthLAppVarF "++L.stringRep++" "++R.stringRep++")"
     -- Seems important but blows up search time
@@ -39,26 +45,26 @@ import Multisem.CaseStudies.VFA.MultiSet
     -- For now we'll limit ourselves to two variables
     -- Note the convention that the argument hole becomes the outer binder
     instance VarStackR (P:Type u){s1 s2}{C1 C2}{v1 v2}{T1 T2}
-      [L:Synth P s1 ((C1 // C2) % (@Var v1 T1))]
+      [L:Synth P s1 ((C1 /// C2) % (@Var v1 T1))]
       [R:Synth P s2 (C2 % (@Var v2 T2))]
       : Synth P (s1#s2) ((C1 % (@Var v1 T1)) % (@Var v2 T2)) where
       denotation := λ t2 t1 => L.denotation t1 (R.denotation t2)
       stringRep := "(VarStackR"++L.stringRep++" "++R.stringRep++")"
     instance VarStackL (P:Type u){s1 s2}{C1 C2}{v1 v2}{T1 T2}
       [L:Synth P s1 (C1 % (@Var v1 T1))]
-      [R:Synth P s2 ((C1 ∖ C2) % (@Var v2 T2))]
+      [R:Synth P s2 ((C1 ∖∖ C2) % (@Var v2 T2))]
       : Synth P (s1#s2) ((C2 % (@Var v2 T2)) % (@Var v1 T1)) where
       denotation := λ t1 t2 => R.denotation t2 (L.denotation t1)
       stringRep := "(VarStackR"++L.stringRep++" "++R.stringRep++")"
     instance VarMatchR (P:Type u){s1 s2}{C1 C2}{v}{T}
-      [L:Synth P s1 ((C1 // C2) % (@Var v T))]
+      [L:Synth P s1 ((C1 /// C2) % (@Var v T))]
       [R:Synth P s2 (C2 % (@Var v T))]
       : Synth P (s1#s2) ((C1 % (@Var v T))) where
       denotation := λ t => L.denotation t (R.denotation t)
       stringRep := "(VarMatchR"++L.stringRep++" "++R.stringRep++")"
     instance VarMatchL (P:Type u){s1 s2}{C1 C2}{v}{T}
       [L:Synth P s1 (C1 % (@Var v T))]
-      [R:Synth P s2 ((C1 ∖ C2) % (@Var v T))]
+      [R:Synth P s2 ((C1 ∖∖ C2) % (@Var v T))]
       : Synth P (s1#s2) ((C2 % (@Var v T))) where
       denotation := λ t => R.denotation t (L.denotation t)
       stringRep := "(VarMatchR"++L.stringRep++" "++R.stringRep++")"
@@ -67,8 +73,8 @@ import Multisem.CaseStudies.VFA.MultiSet
     def _al := dbgspecwitness Prop [|al|] (@NP (List value) % (@Var (List value) "al"))
     def _of_bl := dbgspecwitness Prop [|of bl|] ((@PP (List value) PPType.OF) % (@Var (List value) "bl"))
     def _b := dbgspecwitness Prop [|permutation of bl|] ((@CN (List value)) % (@Var (List value) "bl"))
-    def _c := dbgspecwitness Prop [|a permutation of bl|] (((((@NP (List value)) ∖ S) // (@ADJ (List value))) ∖ ((@NP (List value)) ∖ S)) % (@Var (List value) "bl"))
-    def _d := dbgspecwitness Prop [|is a permutation of bl|] (((@NP (List value)) ∖ S) % (@Var (List value) "bl"))
+    def _c := dbgspecwitness Prop [|a permutation of bl|] (((((@NP (List value)) ∖∖ S) /// (@ADJ (List value))) ∖∖ ((@NP (List value)) ∖∖ S)) % (@Var (List value) "bl"))
+    def _d := dbgspecwitness Prop [|is a permutation of bl|] (((@NP (List value)) ∖∖ S) % (@Var (List value) "bl"))
 
     def _a := dbgspecwitness Prop [| al is a permutation of bl |] ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))
 
@@ -78,25 +84,25 @@ import Multisem.CaseStudies.VFA.MultiSet
     -- So we need a separate 'if' lexicon entry. We'd like if to work on only the ref surface heyting algebras, not all surface HAs.
 
     -- Can't decide if "if" should be handled via a similar lifting process to coordinators (but distinct and only for anaphra, per above), or something else. In the mean time let's just write a few special cases we'd like to be able to ideally derive, to make forward progress
-    instance A_if_B_base {H}[ha:HeytingAlgebra H] : lexicon H "if" (S ∖ (S // S)) where
+    instance A_if_B_base {H}[ha:HeytingAlgebra H] : lexicon H "if" (S ∖∖ (S /// S)) where
       denotation := λ concl hyp => ha.impl hyp concl
-    instance A_if_B_abs1 {H}[ha:HeytingAlgebra H]{v}{T} : lexicon H "if" ((S % (@Var v T)) ∖ ((S % (@Var v T)) // (S % (@Var v T)))) where
+    instance A_if_B_abs1 {H}[ha:HeytingAlgebra H]{v}{T} : lexicon H "if" ((S % (@Var v T)) ∖∖ ((S % (@Var v T)) /// (S % (@Var v T)))) where
       denotation := λ concl hyp x => ha.impl (hyp x) (concl x)
-    instance A_if_B_abs2 {H}[ha:HeytingAlgebra H]{v v'}{T T'} : lexicon H "if" (((S % (@Var v' T')) % (@Var v T)) ∖ (((S % (@Var v' T')) % (@Var v T)) // ((S % (@Var v' T')) % (@Var v T)))) where
+    instance A_if_B_abs2 {H}[ha:HeytingAlgebra H]{v v'}{T T'} : lexicon H "if" (((S % (@Var v' T')) % (@Var v T)) ∖∖ (((S % (@Var v' T')) % (@Var v T)) /// ((S % (@Var v' T')) % (@Var v T)))) where
       denotation := λ concl hyp x y => ha.impl (hyp x y) (concl x y)
-    instance A_when_B_abs2 {H}[ha:HeytingAlgebra H]{v v'}{T T'} : lexicon H "when" (((S % (@Var v' T')) % (@Var v T)) ∖ (((S % (@Var v' T')) % (@Var v T)) // ((S % (@Var v' T')) % (@Var v T)))) where
+    instance A_when_B_abs2 {H}[ha:HeytingAlgebra H]{v v'}{T T'} : lexicon H "when" (((S % (@Var v' T')) % (@Var v T)) ∖∖ (((S % (@Var v' T')) % (@Var v T)) /// ((S % (@Var v' T')) % (@Var v T)))) where
       denotation := λ concl hyp x y => ha.impl (hyp x y) (concl x y)
 
     def _checklift := dbgspecwitness Prop "if" 
-      (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖ (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) // ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))))
-    def _checkshift := dbgspecwitness Prop "if" ((((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖ ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))) // ((S % (@Var ( List value) "bl")) % (@Var (List value) "al")))
-    def _3 := dbgspecwitness Prop ("if" # [| al is a permutation of bl |]) (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖ ((S % (@Var ( List value) "bl")) % (@Var (List value) "al")))
-    def _3manual : Synth Prop ("if" # [| al is a permutation of bl |]) (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖ ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))) :=
+      (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖∖ (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) /// ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))))
+    def _checkshift := dbgspecwitness Prop "if" ((((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖∖ ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))) /// ((S % (@Var ( List value) "bl")) % (@Var (List value) "al")))
+    def _3 := dbgspecwitness Prop ("if" # [| al is a permutation of bl |]) (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖∖ ((S % (@Var ( List value) "bl")) % (@Var (List value) "al")))
+    def _3manual : Synth Prop ("if" # [| al is a permutation of bl |]) (((S % (@Var ( List value) "bl")) % (@Var (List value) "al")) ∖∖ ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))) :=
       SynthRApp (L:= _checkshift) (R:=_a)
     def _4a := dbgspecwitness Prop ([| the contents of al |]) ((@NP multiset) % (@Var (List value) "al"))
     def _4b := dbgspecwitness Prop ([| the contents of bl |]) ((@NP multiset) % (@Var (List value) "bl"))
     -- Okay, this doesn't work because 'equals' is in Misc instead of Lexicon
-    def _4b' := dbgspecwitness Prop ([| equals the contents of bl |]) (((@NP multiset) ∖ S) % (@Var (List value) "bl"))
+    def _4b' := dbgspecwitness Prop ([| equals the contents of bl |]) (((@NP multiset) ∖∖ S) % (@Var (List value) "bl"))
     def _4 := dbgspecwitness Prop ([| the contents of al equals the contents of bl |]) ((S % (@Var ( List value) "bl")) % (@Var (List value) "al"))
     def _5_manual0 := SynthRApp (L:=SynthLApp (L:=_4) (R:=SynthLex (l:=A_when_B_abs2))) (R:=_a)
     def _5_manual := Reassoc' (pre:=_5_manual0)
@@ -152,7 +158,7 @@ import Multisem.CaseStudies.VFA.MultiSet
   section _dbg
     def its_contents_are_empty := dbgspecwitness Prop [|its contents are empty |] (S % (@NP (List value)))
     def its_contents_are_empty' : Synth Prop [|its contents are empty |] (S % (@NP (List value))) :=
-      --let are_empty := dbgspecwitness Prop [|are empty|] ((@NP multiset) ∖ S)
+      --let are_empty := dbgspecwitness Prop [|are empty|] ((@NP multiset) ∖∖ S)
       /- Okay, this is weird: This `its_contents_manual` isn't directly used, but having it in scope seems to get it picked up when inferring the full spec.
          But there's no reason this should matter: it's just a right application! So one of several things must be happening:
          - AppGL doesn't fire unless this unit is already in scope
@@ -171,9 +177,9 @@ import Multisem.CaseStudies.VFA.MultiSet
       --Reassoc' (pre:=full)
       dbgspecwitness Prop [|its contents are empty|] (S % (@NP (List value)))
   
-    def when_ := dbgspecwitness Prop [|when its contents are empty|] (((@NP (List value)) ∖ S) ∖ ((@NP (List value)) ∖ S))
-    def when_manual := SynthRApp (L:=SynthLex (l:=when_lwhent_ref)) (R:= its_contents_are_empty') --dbgspecwitness Prop [|when its contents are empty|] (((@NP (List value)) ∖ S) ∖ ((@NP (List value)) ∖ S))
-    def after_all := Reassoc' (pre:= SynthLApp (L := dbgspecwitness Prop [|is empty|] ((@NP (List value)) ∖ S)) (R := when_manual))
+    def when_ := dbgspecwitness Prop [|when its contents are empty|] (((@NP (List value)) ∖∖ S) ∖∖ ((@NP (List value)) ∖∖ S))
+    def when_manual := SynthRApp (L:=SynthLex (l:=when_lwhent_ref)) (R:= its_contents_are_empty') --dbgspecwitness Prop [|when its contents are empty|] (((@NP (List value)) ∖∖ S) ∖∖ ((@NP (List value)) ∖∖ S))
+    def after_all := Reassoc' (pre:= SynthLApp (L := dbgspecwitness Prop [|is empty|] ((@NP (List value)) ∖∖ S)) (R := when_manual))
     -- TODO: plural values
     def list_of_nats := dbgspecwitness Prop [|list of value|] (@CN (List value))
     def finished_manual_missing_assoc :=
@@ -181,7 +187,7 @@ import Multisem.CaseStudies.VFA.MultiSet
     #eval finished_manual_missing_assoc
     #check (Reassoc' (pre:=finished_manual_missing_assoc))
     -- depends on the hack for 'its contents'...
-    def after_all_inferred := dbgspecwitness Prop [|is empty when its contents are empty|] ((@NP (List value) ∖ S))
+    def after_all_inferred := dbgspecwitness Prop [|is empty when its contents are empty|] ((@NP (List value) ∖∖ S))
 
     def _consistent : contents_nil_inv_raw -> finished_manual_missing_assoc.denotation :=
       by simp [contents_nil_inv_raw, finished_manual_missing_assoc,after_all,when_manual,its_contents_are_empty']

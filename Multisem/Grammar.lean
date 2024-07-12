@@ -4,7 +4,7 @@ import Multisem.TemporalLogic
 
 -- Need this to do #eval
 import Lean
-
+open multisem_fix_ns
 universe u v t
 
 inductive ExprNat : Type
@@ -44,8 +44,8 @@ open Cat
 -- We can allow writing right slashes by implementing Div for Cat
 /- 
   We're dropping the div typeclass instance. Going this route adds noticeable overhead,
-  so we've been using the custom `//` notation below, but leaving this instance open
-  has caused issues with accidentally using `/` instead of `//` in lexicon entries,
+  so we've been using the custom `///` notation below, but leaving this instance open
+  has caused issues with accidentally using `/` instead of `///` in lexicon entries,
   which then takes forever to track down...
 -/
 --instance CatDiv.{q} : Div (Cat.{q}) where
@@ -65,16 +65,16 @@ attribute [simp] LDiv.lDiv
 /-- The idiomatic way to do operator overloading in Lean
     is to define the operator as a typeclass operation.
     When we do this for both left and right slash, it nearly doubles
-    parse times. Defining ∖ directly in terms of `lslash` recovers half that slow-down. Can we redefine the / macro to avoid `HDiv`?
+    parse times. Defining ∖∖ directly in terms of `lslash` recovers half that slow-down. Can we redefine the / macro to avoid `HDiv`?
 -/
-infixr:70 " ∖ " => lslash --LDiv.lDiv
-infixr:70 " // " => rslash --LDiv.lDiv
---macro_rules |  `($x ∖ $y) => `(binop% lslash $x $y)--`(binop% LDiv.lDiv $x $y)
---macro_rules |  `($x // $y) => `(binop% rslash $x $y)--`(binop% LDiv.lDiv $x $y)
+infixr:70 " ∖∖ " => lslash --LDiv.lDiv
+infixr:70 " /// " => rslash --LDiv.lDiv
+--macro_rules |  `($x ∖∖ $y) => `(binop% lslash $x $y)--`(binop% LDiv.lDiv $x $y)
+--macro_rules |  `($x /// $y) => `(binop% rslash $x $y)--`(binop% LDiv.lDiv $x $y)
 
 instance CatLDiv.{q} : LDiv (Cat.{q}) where
   lDiv := lslash
-theorem _checkCatLDiv : ((@NP Nat) ∖ S) = lslash (@NP Nat) S := by rfl
+theorem _checkCatLDiv : ((@NP Nat) ∖∖ S) = lslash (@NP Nat) S := by rfl
 instance CatMod.{q} : Mod (Cat.{q}) where
   mod := Ref
 
@@ -98,7 +98,7 @@ instance catRepr : Repr Cat where
 --axiom polyunit.{α} : Type α
 --axiom pu.{α} : polyunit.{α}
 
--- Would like to use this def, but there's a bug in m4, fixed in nightly: https://github.com/leanprover/lean4/commit/fb45eb49643b2abbc0d057d1fafc5e1eb419fc2a
+-- Would like to use this def, but there's a bug in m4, fixed in nightly: https:///github.com/leanprover/lean4/commit/fb45eb49643b2abbc0d057d1fafc5e1eb419fc2a
 --inductive polyunit.{α} : Type α where
 --| pu : polyunit
 def polyunit.{α} : Type α := ULift Unit
@@ -112,7 +112,7 @@ def interp.{q} (P:Type q) (c:Cat.{q}) : Type q :=
   match c with
   | S => P
   | TactS => Lean.Elab.Tactic.TacticM (Lean.TSyntax `tactic) × P
-  | TactS2 => ULift.{q,0} (ReaderT MyExprData Lean.Elab.Tactic.TacticM (Lean.TSyntax `tactic))
+  | TactS2 => ULift.{q,0} (ReaderT MyExprData Lean.Elab.Tactic.TacticM (Lean.TSyntax `tactic)) -- tactic with "numbered holes"
   | @NP x => x
   | @Var x _ => x
   | @ADJ x => x -> P
@@ -153,10 +153,10 @@ instance ADJHeytingAlgebra (P:Type u)[HeytingAlgebra P]{T}{n} : SurfaceHeytingAl
 instance SHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n} : SurfaceHeytingAlgebra P n S where
   combineProps op d1 d2 := op d1 d2
 
-instance lSlashHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C ∖ C') where
+instance lSlashHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C ∖∖ C') where
   combineProps op d1 d2 := fun x => SurfaceHeytingAlgebra.combineProps n op (d1 x) (d2 x)
 
-instance rSlashHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C' // C) where
+instance rSlashHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C' /// C) where
   combineProps op d1 d2 := fun x => SurfaceHeytingAlgebra.combineProps n op (d1 x) (d2 x)
 
 instance refHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C' % C) where
@@ -172,7 +172,7 @@ instance taggedLexVar.{q} {P:Type q} {T : Type q} (w:String) [NLVar w] : lexicon
   denotation := λ x => x
 
 
-instance coordLexicon (P:Type)[HeytingAlgebra P](w:String) (C:Cat)[Coordinator P w][SurfaceHeytingAlgebra P (Nat.succ (Nat.succ (Nat.succ Nat.zero))) C] : lexicon P w (C ∖ (C // C)) where
+instance coordLexicon (P:Type)[HeytingAlgebra P](w:String) (C:Cat)[Coordinator P w][SurfaceHeytingAlgebra P (Nat.succ (Nat.succ (Nat.succ Nat.zero))) C] : lexicon P w (C ∖∖ (C /// C)) where
   denotation := fun L R => SurfaceHeytingAlgebra.combineProps 3 (Coordinator.denoteCoord w) L R
 -- We don't need the other associativity, as it can be recovered by shifting
 
@@ -187,7 +187,7 @@ macro "lex" n:ident "for" P:term "as" c:term : command =>
   let s := n.getId.toString
   -- This id has type Lean.Ident (no surprise given the construtor), but splicing it in as the instance name with $(id) calls .raw, which requires
   -- an argument of type Lean.TSyntax `Lean.Parser.Command.namedPrio
-  -- Need to read more of the metaprogramming book https://github.com/arthurpaulino/lean4-metaprogramming-book to figure this out
+  -- Need to read more of the metaprogramming book https:///github.com/arthurpaulino/lean4-metaprogramming-book to figure this out
   let id := (Lean.mkIdent (s ++ "_lex_"))
 `(
   instance : lexicon $(P) $(Lean.quote s) $(c) := { denotation := $(n) }

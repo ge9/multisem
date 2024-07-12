@@ -292,7 +292,7 @@ section searchtree_specs
   -- This notion of binding is contxt/program-specific
   instance binding_CN {V:Type}[PolyArg V] : lexicon Prop "binding" (@CN (key × V)) where
     denotation := λ _ => True
-  instance elements_of_NP {V:Type}[PolyArg V] : lexicon Prop "elements" ((@NP (List (key × V))) // (@PP (@tree V) PPType.OF)) where
+  instance elements_of_NP {V:Type}[PolyArg V] : lexicon Prop "elements" ((@NP (List (key × V))) /// (@PP (@tree V) PPType.OF)) where
     denotation := λ t => elements t
   -- TODO{V:Type} : unclear if I need this, but useful for debugging
   instance empty_tree_np {V:Type}[PolyArg V] : lexicon Prop "empty_tree" (@NP (@tree V)) where
@@ -301,12 +301,12 @@ section searchtree_specs
   instance tree_cn {V:Type}[PolyArg V] : lexicon Prop "tree" (@CN (@tree V)) where 
     denotation := λ _ => True
   -- TODO{V:Type} : still need to consider the ADJ --> CN/CN lift
-  instance empty_cn_mod {V:Type}[PolyArg V] : lexicon Prop "empty_tree" ((@CN (@tree V)) // (@CN (@tree V))) where
+  instance empty_cn_mod {V:Type}[PolyArg V] : lexicon Prop "empty_tree" ((@CN (@tree V)) /// (@CN (@tree V))) where
     denotation := λ p x => p x ∧ x = empty_tree
   
   section general_instances_to_move
     -- TODO: Here are some general-purpose lexicon entries to move
-    instance the_def_single_subj {T:Type} : lexicon Prop "the" ((S // ((@NP T) ∖ S)) // (@CN T)) where
+    instance the_def_single_subj {T:Type} : lexicon Prop "the" ((S /// ((@NP T) ∖∖ S)) /// (@CN T)) where
       denotation := λ p rest => ∃ (t:T), p t ∧ (∀ t', p t' -> t' = t) ∧ rest t
   end general_instances_to_move
 
@@ -320,7 +320,7 @@ section searchtree_specs
     def debugging_empty_tree_BST_specPA (T:Type) [pa:PolyArg T]: Synth Prop [|empty_treeP is a BST|] S :=
       let et_lex := SynthLex (l:=@empty_tree_np_polyarg T pa)
       let bst_lex := SynthLex (l:=BST_CN)
-      let a_lex := SynthLex (l:=a_cn_as_adj) -- (C:=((@NP (@tree V)) ∖ S)))
+      let a_lex := SynthLex (l:=a_cn_as_adj) -- (C:=((@NP (@tree V)) ∖∖ S)))
       let is_lex := SynthLex (l:=noun_is_adj_lex)
       let is_a_bst := SynthLApp (L:= is_lex) (R:=(SynthRApp (L := a_lex) (R := bst_lex)))
       SynthLApp (L:=et_lex) (R:=is_a_bst)
@@ -339,7 +339,7 @@ section searchtree_specs
   --    -- This line fails because Lean tries to solve the unification as if not in a section, and then tries to provide an instantiation of VV and fails
   --    let et_lex := SynthLex (l:=empty_tree_np_attempt)
   --    let bst_lex := SynthLex (l:=BST_CN)
-  --    let a_lex := SynthLex (l:=a_cn_as_adj) -- (C:=((@NP (@tree V)) ∖ S)))
+  --    let a_lex := SynthLex (l:=a_cn_as_adj) -- (C:=((@NP (@tree V)) ∖∖ S)))
   --    let is_lex := SynthLex (l:=noun_is_adj_lex)
   --    let is_a_bst := SynthLApp (L:= is_lex) (R:=(SynthRApp (L := a_lex) (R := bst_lex)))
   --    SynthLApp (L:=et_lex) (R:=is_a_bst)
@@ -355,9 +355,9 @@ section searchtree_specs
 
   --/- The following is an interesting approach, but doesn't work because Lean doesn't actually infer universals the way the syntax suggests-/
   --#check Synth.denotation
-  --instance polysyn : [∀ T, Synth Prop ws ((@NP (@tree T)) ∖ S)] -> Synth Prop ws S where
-  --  denotation := (∀ (T:Type), (Synth.denotation ws (c:= ((@NP (@tree T)) ∖ S))) (@empty_tree T))
-  --  stringRep := "(polysyn "++(Synth.stringRep Prop ws (c:=((@NP (@tree Nat)) ∖ S)))++")"
+  --instance polysyn : [∀ T, Synth Prop ws ((@NP (@tree T)) ∖∖ S)] -> Synth Prop ws S where
+  --  denotation := (∀ (T:Type), (Synth.denotation ws (c:= ((@NP (@tree T)) ∖∖ S))) (@empty_tree T))
+  --  stringRep := "(polysyn "++(Synth.stringRep Prop ws (c:=((@NP (@tree Nat)) ∖∖ S)))++")"
   --  --∀ T, Synth.denotation ws T
   
   --section selfcontained
@@ -393,11 +393,11 @@ section searchtree_specs
   
   -- Total hack to see if this polymorphism approach has legs
   -- Yes! This works! Now the question is how to generalize this appropriately
-  -- Perhaps via a Polylex class that indexes a word by a Type->Cat, plus left and right app rules like this? as in PolyLex w f and [∀ T, Synth Prop ws (f T ∖ S)] or similar?
+  -- Perhaps via a Polylex class that indexes a word by a Type->Cat, plus left and right app rules like this? as in PolyLex w f and [∀ T, Synth Prop ws (f T ∖∖ S)] or similar?
   -- TODO: This is the start of a longer-term solution, if we can properly lexicalize this, perhaps in an additional layer of grammar.
-  instance polyhack : [∀ T, Synth Prop ws ((@NP (@tree T)) ∖ S)] -> Synth Prop ("empty_tree"#ws) S where
-    denotation := (∀ (T:Type), (Synth.denotation ws (c:= ((@NP (@tree T)) ∖ S))) (@empty_tree T))
-    stringRep := "(polysyn "++(Synth.stringRep Prop ws (c:=((@NP (@tree Nat)) ∖ S)))++")"
+  instance polyhack : [∀ T, Synth Prop ws ((@NP (@tree T)) ∖∖ S)] -> Synth Prop ("empty_tree"#ws) S where
+    denotation := (∀ (T:Type), (Synth.denotation ws (c:= ((@NP (@tree T)) ∖∖ S))) (@empty_tree T))
+    stringRep := "(polysyn "++(Synth.stringRep Prop ws (c:=((@NP (@tree Nat)) ∖∖ S)))++")"
     
 
   /- This attempt to build a parallel category family parameterized by a type.

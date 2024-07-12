@@ -1,5 +1,7 @@
 import Multisem.Examples.Misc
 -- some longer-running examples
+open TreeSpecs
+
 set_option synthInstance.maxHeartbeats 800000
 set_option maxHeartbeats 800000
 theorem misc4 : pspec [| every natural is nonnegative and is even or odd |] :=

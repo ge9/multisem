@@ -1,3 +1,4 @@
+namespace multisem_fix_ns
 /-- The classic Heyting Algebra -/
 class HeytingAlgebra.{u} (P:Type u) where
   top : P
