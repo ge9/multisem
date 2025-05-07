@@ -6,6 +6,7 @@ import Multisem.CaseStudies.VFA.MultiSet
 open sort
 
 open Cat
+
 open multisem_fix_ns
 set_option synthInstance.checkSynthOrder false
 
@@ -186,32 +187,32 @@ instance my_lex {A} : lexicon Prop "my" ((@NP A) /// (@NP (String -> A))) where
   denotation f := f "my"
 
 def hack_ : dspec ("my"::"length"::"is"::"even"::[]) :=
-  by simp
+  by simp; decide
 
 -- VFA Sort examples
 def insert_sorted_spec'' : insert_sorted_spec -> dspec ("insertion"::"of"::"any"::"natural"::"maintains"::"sortedness"::[]) :=
   by simp [insert_sorted_spec]
-     intro H
-     apply H
+    --  intro H
+    --  apply H
 
   def sort_sorted_spec' : sort_sorted_spec -> dspec ("sort"::"sorts"::"any"::"list"::"of"::"naturals"::[]) :=
     by simp [sort_sorted_spec]
-       intro H 
-       apply H
+      --  intro H 
+      --  apply H
 
   def insert_perm_spec' := dspec ("insert"::"is"::"a"::"permutation"::"of"::"cons"::[])
 
   def sort_perm_spec' : 
     sort_perm_spec -> dspec ("sort"::"is"::"a"::"permutation"::[]) :=
     by simp [sort_perm_spec]
-       intro H
-       exists sort
+      --  intro H
+      --  exists sort
   def insertion_sort_correct_spec' : insertion_sort_correct_spec -> dspec ("sort"::"is"::"a"::"sorting"::"permuting"::"algorithm"::[]) :=
     by simp [insertion_sort_correct_spec]
        simp [is_a_sorting_algorithm]
        intro H
-       exists sort
-       simp
+      --  exists sort
+      --  simp
        apply And.intro
        . intro l
          match (H l) with

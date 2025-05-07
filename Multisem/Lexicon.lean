@@ -1,6 +1,8 @@
 import Multisem.Grammar
 open Cat
 
+open multisem_fix_ns
+
 def asNat (n:Nat) := n
 def odd (n:Nat) : Bool :=
   match n with

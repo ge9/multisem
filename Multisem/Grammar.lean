@@ -5,9 +5,10 @@ import Multisem.TemporalLogic
 -- Need this to do #eval
 import Lean
 open multisem_fix_ns
-
 universe u v t
 
+inductive ExprNat : Type
+| mk (n: Nat) : ExprNat
 /--
 The enumeration of supported prepositional phrase varieties for English
 -/
@@ -23,6 +24,8 @@ inductive Cat.{q} : Type (q+1)  :=
 | rslash : Cat  -> Cat  -> Cat 
 | lslash : Cat  -> Cat  -> Cat 
 | Var : forall {x:Type q}, String -> Cat
+| TactS : Cat --looks similar to S, but interpreted as a tactic syntax (with "hole"s)
+| NPExpr : Cat
 open Cat
 
 -- These are some currently-disabled notations for writing the slashes
@@ -74,11 +77,11 @@ def catrepr (c:Cat) : Lean.Format :=
     | rslash l r => "("++(catrepr l)++" / "++(catrepr r)++")"
     | lslash l r => "("++(catrepr l)++" \\ "++(catrepr r)++")"
     | Var v => "$"++v
+    | TactS => "S" | NPExpr => "NPExpr"
 instance catRepr : Repr Cat where
   reprPrec c _n := catrepr c
 
 
-#eval reprPrec (rslash (lslash S S) S) 234
 #eval (rslash (lslash (@NP Nat) S) (@ADJ Nat))
 
 --axiom polyunit.{α} : Type α
@@ -90,8 +93,11 @@ instance catRepr : Repr Cat where
 def polyunit.{α} : Type α := ULift Unit
 def pu.{α} : polyunit.{α} := ULift.up ()
 
+-- a list of (number, syntax)
+abbrev IndexedSyntax := Lean.AssocList Nat (Lean.Syntax)
+
 -- We do Lambek-style interpretation of lslash
-@[simp]
+@[simp, multisem_simps]
 def interp.{q} (P:Type q) (c:Cat.{q}) : Type q :=
   match c with
   | S => P
@@ -105,14 +111,16 @@ def interp.{q} (P:Type q) (c:Cat.{q}) : Type q :=
   -- The variety of prepositional phrase has not semantic content, they're basically syntactic tags for disambiguation
   | @PP x PPType.OFN => x -> P -- This is a bit of a hack to make stuff like "of naturals" work, but I haven't found a clear discussion of "of CN" in the literature yet
   | @PP x _ => x
+  | TactS => ULift.{q,0} (ReaderT IndexedSyntax Lean.Elab.Tactic.TacticM (Lean.TSyntax `tactic)) -- tactic syntax with "indexed holes"
+  | NPExpr => ULift.{q,0} Nat
 
 class Coordinator (P:Type u)[HeytingAlgebra P](w:String) where
   denoteCoord : P -> P -> P
-attribute [simp] Coordinator.denoteCoord
+attribute [simp, multisem_simps] Coordinator.denoteCoord
 
 class SurfaceHeytingAlgebra (P:Type u) (n:Nat) (C:Cat.{u}) where
   combineProps : (P -> P -> P) -> interp P C -> interp P C -> interp P C
-attribute [simp] SurfaceHeytingAlgebra.combineProps
+attribute [simp, multisem_simps] SurfaceHeytingAlgebra.combineProps
 
 
 -- TODO: Study how to rework combineProps in terms of pointwise lifting
@@ -144,9 +152,26 @@ instance rSlashHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[Su
 instance refHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C' % C) where
   combineProps op d1 d2 := fun x => SurfaceHeytingAlgebra.combineProps n op (d1 x) (d2 x)
 
-class lexicon.{q} (P : Type q) (w:String) (c:Cat.{q}) where
+def MathWord := Sum String ExprNat
+instance : Coe String MathWord where
+  coe a := Sum.inl a
+instance : Coe ExprNat MathWord where
+  coe n := Sum.inr n
+instance : Coe Nat MathWord where
+  coe n := Sum.inr ⟨n⟩
+instance (n : Nat ): OfNat ExprNat n where
+  ofNat := ⟨n⟩
+instance (n : Nat ): OfNat MathWord n where
+  ofNat := n
+def MathWord.toString : MathWord → String
+| Sum.inl a => a
+| Sum.inr _ => "(num)"-- n.toString
+instance : ToString MathWord where
+  toString n := n.toString
+
+class lexicon.{q} (P : Type q) (w:MathWord) (c:Cat.{q}) where
   denotation : interp P c 
-attribute [simp] lexicon.denotation
+attribute [simp, multisem_simps] lexicon.denotation
 
 class NLVar (s:String) where
 
@@ -170,7 +195,7 @@ macro "lex" n:ident "for" P:term "as" c:term : command =>
   -- This id has type Lean.Ident (no surprise given the construtor), but splicing it in as the instance name with $(id) calls .raw, which requires
   -- an argument of type Lean.TSyntax `Lean.Parser.Command.namedPrio
   -- Need to read more of the metaprogramming book https://github.com/arthurpaulino/lean4-metaprogramming-book to figure this out
-  let id := (Lean.mkIdent (s ++ "_lex_"))
+  let id := (Lean.mkIdent $ Lean.Name.mkStr1 (s ++ "_lex_"))
 `(
   instance : lexicon $(P) $(Lean.quote s) $(c) := { denotation := $(n) }
 )

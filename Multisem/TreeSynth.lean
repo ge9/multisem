@@ -1,50 +1,49 @@
 import Multisem.Grammar
 import Multisem.Text.Macros -- contains ContextTree
 open Cat
-open multisem_fix_ns
 set_option synthInstance.checkSynthOrder false
 
 namespace TreeSpecs
 
-class Synth (P:Type u)(ws:ContextTree String) (c:Cat) where
+open multisem_fix_ns
+class Synth (P:Type u)(ws:ContextTree MathWord) (c:Cat) where
   denotation : interp P c
   stringRep : Lean.Format
-attribute [simp] Synth.denotation
-
+attribute [simp, multisem_simps] Synth.denotation
 -- The Repr typeclass is how Lean displays results of #eval commands.
 -- Implementing this (and for that matter, requiring Synth.stringRep)
 -- lets us print the result of a call to specwitness
-instance (P:Type u)(ws:ContextTree String) (c:Cat) : Repr (Synth P ws c) where
+instance (P:Type u)(ws:ContextTree MathWord) (c:Cat) : Repr (Synth P ws c) where
   reprPrec inst n := inst.stringRep
 
 
 
-instance SynthLex (P:Type u){w:String}{C:Cat}[l:lexicon P w C] : Synth P (ContextTree.one w) C where
+@[multisem_simps]instance SynthLex (P:Type u){w:MathWord}{C:Cat}[l:lexicon P w C] : Synth P (ContextTree.one w) C where
   denotation := lexicon.denotation w
-  stringRep := "lexicon<"++w++":"++ (reprPrec C 0) ++">"
+  stringRep := "lexicon<"++w.toString++":"++ (reprPrec C 0) ++">"
 
-instance SynthRApp (P:Type u){s1 s2 c1 c2}[L:Synth P s1 (c1 /// c2)][R:Synth P s2 c2] : Synth P (s1#s2) c1 where
+@[multisem_simps]instance SynthRApp (P:Type u){s1 s2 c1 c2}[L:Synth P s1 (c1 /// c2)][R:Synth P s2 c2] : Synth P (s1#s2) c1 where
   denotation := L.denotation R.denotation --@Synth.denotation P s1 (c1 /// c2) L (Synth.denotation s2)
   stringRep := "(SynthRApp "++L.stringRep++" "++R.stringRep++")"
-instance SynthLApp (P:Type u){s1 s2 c1 c2}[L:Synth P s1 c1][R:Synth P s2 (c1 ∖∖ c2)] : Synth P (s1#s2) c2 where
+@[multisem_simps]instance SynthLApp (P:Type u){s1 s2 c1 c2}[L:Synth P s1 c1][R:Synth P s2 (c1 ∖∖ c2)] : Synth P (s1#s2) c2 where
   denotation := R.denotation (L.denotation)
   stringRep := "(SynthLApp "++L.stringRep++" "++R.stringRep++")"
 --  denotation := @Synth.denotation P _ _ _ R (Synth.denotation s1)
 
 --instance (priority := default-1000) Reassoc (P:Type u){s1 s2 s3 c}[pre:Synth P (s1 ++ (s2 ++ s3)) c] : Synth P ((s1 ++ s2) ++ s3) c where
 --  denotation := pre.denotation
-instance Reassoc' (P:Type u){s1 s2 s3 c}[pre:Synth P ((s1 # s2) # s3) c] : Synth P (s1 # (s2 # s3)) c where
+@[multisem_simps]instance Reassoc' (P:Type u){s1 s2 s3 c}[pre:Synth P ((s1 # s2) # s3) c] : Synth P (s1 # (s2 # s3)) c where
   denotation := pre.denotation
   stringRep := "(Reassoc' "++pre.stringRep++")"
 
-instance SynthShift (P:Type u){s c l r}[L:Synth P s (l ∖∖ (c /// r))] : Synth P s ((l ∖∖ c) /// r) where
+@[multisem_simps]instance SynthShift (P:Type u){s c l r}[L:Synth P s (l ∖∖ (c /// r))] : Synth P s ((l ∖∖ c) /// r) where
   denotation xr xl := L.denotation xl xr
   stringRep := "(SynthShift "++L.stringRep++")"
 
-instance RComp (P:Type u){s s' c1 c2 c3}[L:Synth P s (c1 /// c2)][R:Synth P s' (c2 /// c3)] : Synth P (s # s') (c1 /// c3) where
+@[multisem_simps]instance RComp (P:Type u){s s' c1 c2 c3}[L:Synth P s (c1 /// c2)][R:Synth P s' (c2 /// c3)] : Synth P (s # s') (c1 /// c3) where
   denotation x := L.denotation (R.denotation x)
   stringRep := "(RComp "++L.stringRep++" "++R.stringRep++")"
-instance LComp (P:Type u){s s' c1 c2 c3}[L:Synth P s (c1 ∖∖ c2)][R:Synth P s' (c2 ∖∖ c3)] : Synth P (s # s') (c1 ∖∖ c3) where
+@[multisem_simps]instance LComp (P:Type u){s s' c1 c2 c3}[L:Synth P s (c1 ∖∖ c2)][R:Synth P s' (c2 ∖∖ c3)] : Synth P (s # s') (c1 ∖∖ c3) where
   denotation x := R.denotation (L.denotation x)
   stringRep := "(LComp "++L.stringRep++" "++R.stringRep++")"
 
@@ -125,7 +124,7 @@ namespace Jacobson
   theorem AppZRR_conservative {P X Y A B C}[HeytingAlgebra P]
     (f:Synth P X ((A /// (@NP B)) /// C))(arg:Synth P Y (C % (@NP B)))
     : (SynthRApp (L := ZRR (base:=f)) (R := arg)).denotation = (AppZRR (f:=f) (arg:=arg)).denotation :=
-      by simp
+      by rfl
   scoped instance AppZLR {P:Type u}[HeytingAlgebra P]{X Y A B C}
     [f:Synth P X (((@NP B) ∖∖ A) /// C)][arg:Synth P Y (C % (@NP B))]
     : Synth P (X # Y) ((@NP B) ∖∖ A) where
@@ -157,15 +156,15 @@ end Jacobson
 
 
 
-@[simp]
-def dbgspec (l:ContextTree String) (C:Cat) [sem:Synth Prop l C] : interp Prop C :=
+@[simp, multisem_simps]
+def dbgspec (l:ContextTree MathWord) (C:Cat) [sem:Synth Prop l C] : interp Prop C :=
+  sem.denotation
+@[simp, multisem_simps]
+def pspec (l:ContextTree MathWord) [HeytingAlgebra Prop][sem:Synth Prop l S] : Prop :=
   sem.denotation
 @[simp]
-def pspec (l:ContextTree String) [HeytingAlgebra Prop][sem:Synth Prop l S] : Prop :=
-  sem.denotation
+def specwitness (P:Type u)(l:ContextTree MathWord) [HeytingAlgebra P][sem:Synth P l S] : Synth P l S := sem
 @[simp]
-def specwitness (P:Type u)(l:ContextTree String) [HeytingAlgebra P][sem:Synth P l S] : Synth P l S := sem
-@[simp]
-def dbgspecwitness (P:Type u)(l:ContextTree String)(C:Cat) [HeytingAlgebra P][sem:Synth P l C] : Synth P l C := sem
+def dbgspecwitness (P:Type u)(l:ContextTree MathWord)(C:Cat) [HeytingAlgebra P][sem:Synth P l C] : Synth P l C := sem
 
 end TreeSpecs

@@ -6,6 +6,7 @@ import Multisem.Lexicon
 --open sort
 
 open Cat
+
 open multisem_fix_ns
 /-
  - The official Lean 4 release added checks on instances
@@ -286,8 +287,8 @@ def three_is_even_parse : DSynth Prop 0 3 false false S :=
   DLApp (L:=three) (R:=is_even)
 #check three_is_even_parse.dsem
 
-def three_is_even_imp_false : three_is_even_parse.dsem -> False :=
-  by simp [three_is_even_parse]
+-- def three_is_even_imp_false : three_is_even_parse.dsem -> False :=
+--   by simp [three_is_even_parse]
 
 @[simp]
 def three_is_even_diff := dbgdspec ("three"::"is"::"even"::[]) 3

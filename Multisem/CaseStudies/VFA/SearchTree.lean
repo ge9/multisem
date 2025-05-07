@@ -269,7 +269,7 @@ end searchtree
 section searchtree_specs
   open Cat
   /-- A temp hack to sketch specs without asking Lean to synthesize them -/
-  axiom untranslated : ∀ (P:Type u) (t:ContextTree String), Synth P t S
+  axiom untranslated : ∀ (P:Type u) (t:ContextTree MathWord), Synth P t S
   
   /-- `PolyArg` is a bit of a hack. What we'd really like here is to declare
       a section variable, then locally declare relevant lexicon entries in

@@ -6,10 +6,10 @@ set_option synthInstance.checkSynthOrder false
 
 /-- Let's try to use Span to map ranges to trees -/
 class Span (P:Type)[HeytingAlgebra P] (i j : Nat) (c:Cat) where
-  tree : ContextTree String
+  tree : ContextTree MathWord
   synth : interp P c
 
-class Index (s:String) (i:Nat) where
+class Index (s:MathWord) (i:Nat) where
 
 instance span_index {P}[HeytingAlgebra P]{s}{i}{c}[l:lexicon P s c][idx:Index s i] : Span P i (Nat.succ i) c where
   tree := s
