@@ -1,4 +1,6 @@
 import Multisem.Examples.Misc
+open Cat
+open TreeSpecs
 -- some longer-running examples
 set_option synthInstance.maxHeartbeats 800000
 set_option maxHeartbeats 800000

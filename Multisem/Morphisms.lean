@@ -3,7 +3,11 @@ import Multisem.HeytingAlgebras
 import Multisem.TemporalLogic
 import Multisem.Text.Macros
 import Multisem.Lexicon
+import Multisem.TreeSynth
 open Cat
+open TreeSpecs
+open multisem_fix_ns
+set_option synthInstance.checkSynthOrder false
 
 
 -- This is the absolute simplest morphism between lexicons

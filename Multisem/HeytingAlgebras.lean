@@ -1,3 +1,5 @@
+import Multisem.SimpAttr
+namespace multisem_fix_ns
 /-- The classic Heyting Algebra -/
 class HeytingAlgebra.{u} (P:Type u) where
   top : P
@@ -82,3 +84,5 @@ instance PropHeyting : HeytingAlgebra Prop where
 instance PropPolyadic : PolyadicAlgebra Prop where
   all {T} f := ∀ (t:T), f t
   ex {T} f := ∃ (t:T), f t
+
+end multisem_fix_ns

@@ -63,16 +63,16 @@ namespace sort_specs
 
   instance sorting : lexicon Prop "sorting" (@ADJ  (List Nat -> List Nat)) where
     denotation := fun f => ∀ l, sorted (f l)
-  instance sorts_lex : lexicon Prop "sorts" (((@NP (List Nat -> List Nat)) ∖ S) // (@NP (List Nat))) where
+  instance sorts_lex : lexicon Prop "sorts" (((@NP (List Nat -> List Nat)) ∖∖ S) /// (@NP (List Nat))) where
     denotation obj subj := sorted (subj obj)
 
-  instance permutation_lifted {A B : Type}: lexicon Prop "permutation" ((@CN (A -> B -> List Nat)) // (@PP (A -> B -> List Nat) PPType.OF)) where
+  instance permutation_lifted {A B : Type}: lexicon Prop "permutation" ((@CN (A -> B -> List Nat)) /// (@PP (A -> B -> List Nat) PPType.OF)) where
     denotation other f := ∀ a b, Permutation (other a b) (f a b)
 
 
-  instance insertion_func : lexicon Prop "insertion" ((@NP (List Nat -> List Nat)) // (@PP Nat PPType.OF)) where
+  instance insertion_func : lexicon Prop "insertion" ((@NP (List Nat -> List Nat)) /// (@PP Nat PPType.OF)) where
     denotation pp := insert pp
-  instance maintains_lex : lexicon Prop "maintains" (((@NP (List Nat -> List Nat)) ∖ S) // (@NP (List Nat -> Prop))) where
+  instance maintains_lex : lexicon Prop "maintains" (((@NP (List Nat -> List Nat)) ∖∖ S) /// (@NP (List Nat -> Prop))) where
     denotation prop f := ∀ x, prop x -> prop (f x)
 
   -- Long long term, we could bake in some morphology that lifts 'sorted' from ADJ to 'sortedness' referring to the underlying predicate

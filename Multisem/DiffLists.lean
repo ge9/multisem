@@ -6,6 +6,8 @@ import Multisem.CaseStudies.VFA.MultiSet
 open sort
 
 open Cat
+open multisem_fix_ns
+set_option synthInstance.checkSynthOrder false
 
 class NonEmptyTail (A B : List String) where
 instance NTailRefl {a A} : NonEmptyTail (a::A) A where
@@ -24,7 +26,7 @@ instance DRApp {P}{Front Back1 Back2 : List String} {A B : Cat}
   --[NonEmptyTail Back1 Back2]
   --[NonEmptyTail Front Back1]
   [StrictSubList Front Back1][StrictSubList Back1 Back2]
-  [L : DSynth P Front Back1 (B // A)]
+  [L : DSynth P Front Back1 (B /// A)]
   [R : DSynth P Back1 Back2 A]
   : DSynth P Front Back2 B where
   dsem := L.dsem R.dsem
@@ -33,7 +35,7 @@ instance DLApp {P}{Front Back1 Back2 : List String} {A B : Cat}
   --[NonEmptyTail Front Back1]
   [StrictSubList Front Back1][StrictSubList Back1 Back2]
   [L : DSynth P Front Back1 A]
-  [R : DSynth P Back1 Back2 (A ∖ B)]
+  [R : DSynth P Back1 Back2 (A ∖∖ B)]
   : DSynth P Front Back2 B where
   dsem := R.dsem L.dsem
 
@@ -48,18 +50,18 @@ instance (priority := default + 100) DLex {P}{L : List String}{w:String}{C:Cat}
 
 -- No Reassoc or Reassoc' is necessary!
 
-instance DShift {P}{Front Back : List String}{c l r}[StrictSubList Front Back][L:DSynth P Front Back (l ∖ (c // r))] : DSynth P Front Back ((l ∖ c) // r) where
+instance DShift {P}{Front Back : List String}{c l r}[StrictSubList Front Back][L:DSynth P Front Back (l ∖∖ (c /// r))] : DSynth P Front Back ((l ∖∖ c) /// r) where
   dsem xr xl := L.dsem xl xr
 
-instance DRComp (P:Type u){s smid s' c1 c2 c3}[StrictSubList s smid][StrictSubList smid s'][L:DSynth P s smid (c1 // c2)][R:DSynth P smid s' (c2 // c3)] : DSynth P s s' (c1 // c3) where
+instance DRComp (P:Type u){s smid s' c1 c2 c3}[StrictSubList s smid][StrictSubList smid s'][L:DSynth P s smid (c1 /// c2)][R:DSynth P smid s' (c2 /// c3)] : DSynth P s s' (c1 /// c3) where
   dsem x := L.dsem (R.dsem x)
-instance DLComp (P:Type u){s smid s' c1 c2 c3}[StrictSubList s smid][StrictSubList smid s'][L:DSynth P s smid (c1 ∖ c2)][R:DSynth P smid s' (c2 ∖ c3)] : DSynth P s s' (c1 ∖ c3) where
+instance DLComp (P:Type u){s smid s' c1 c2 c3}[StrictSubList s smid][StrictSubList smid s'][L:DSynth P s smid (c1 ∖∖ c2)][R:DSynth P smid s' (c2 ∖∖ c3)] : DSynth P s s' (c1 ∖∖ c3) where
   dsem x := R.dsem (L.dsem x)
 
 -- English-specific lifting rules
 -- Montague-style lifting for GQs in object position
-instance DMLift (H:Type u){T U:Type u}{s s'}[sem:DSynth H s s' (((@NP T) ∖ S) // (@NP U))] :
-  DSynth H s s' (((@NP T) ∖ S) // (S // ((@NP U) ∖ S))) where 
+instance DMLift (H:Type u){T U:Type u}{s s'}[sem:DSynth H s s' (((@NP T) ∖∖ S) /// (@NP U))] :
+  DSynth H s s' (((@NP T) ∖∖ S) /// (S /// ((@NP U) ∖∖ S))) where 
   dsem := fun P x => P (fun y => sem.dsem y x)
 
 
@@ -71,31 +73,31 @@ namespace DiffJacobson
   -- Slightly simplified (concretized) Jacobson-style extraction (e.g., for anaphora), per Jaeger (p100)
   -- Jacobson restricts the automatic raising to cases where the extraction is a NP, which is all we need now, and also prevents these from completely trashing performance with unconstrained search
   /-
-  local instance (priority := low) GR {P:Type u}[HeytingAlgebra P]{X A B}{C:Type u}[base:Synth P X (A // B)]
-    : Synth P X ((A % (@NP C)) // (B % (@NP C))) where
+  local instance (priority := low) GR {P:Type u}[HeytingAlgebra P]{X A B}{C:Type u}[base:Synth P X (A /// B)]
+    : Synth P X ((A % (@NP C)) /// (B % (@NP C))) where
     denotation := fun x y => base.denotation (x y)
     stringRep := "(G> "++base.stringRep++")"
-  local instance (priority := low) GL {P:Type u}[HeytingAlgebra P]{X A B}{C:Type u}[base:Synth P X (B ∖ A)]
-    : Synth P X ((B % (@NP C)) ∖ (A % (@NP C))) where
+  local instance (priority := low) GL {P:Type u}[HeytingAlgebra P]{X A B}{C:Type u}[base:Synth P X (B ∖∖ A)]
+    : Synth P X ((B % (@NP C)) ∖∖ (A % (@NP C))) where
     denotation := fun x y => base.denotation (x y)
     stringRep := "(G< "++base.stringRep++")"
   
-  local instance (priority := low) ZRR {P:Type u}[HeytingAlgebra P]{X A B C}[base:Synth P X ((A // (@NP B)) // C)]
-    : Synth P X ((A // (@NP B)) // (C % (@NP B))) where
+  local instance (priority := low) ZRR {P:Type u}[HeytingAlgebra P]{X A B C}[base:Synth P X ((A /// (@NP B)) /// C)]
+    : Synth P X ((A /// (@NP B)) /// (C % (@NP B))) where
     denotation := fun x y => base.denotation (x y) y
     stringRep := "(Z>> "++base.stringRep++")"
-  local instance (priority := low) ZLR {P:Type u}[HeytingAlgebra P]{X A B C}[base:Synth P X (((@NP B) ∖ A) // C)]
-    : Synth P X (((@NP B) ∖ A) // (C % (@NP B))) where
+  local instance (priority := low) ZLR {P:Type u}[HeytingAlgebra P]{X A B C}[base:Synth P X (((@NP B) ∖∖ A) /// C)]
+    : Synth P X (((@NP B) ∖∖ A) /// (C % (@NP B))) where
     denotation := fun x y => base.denotation (x y) y
     stringRep := "(Z<> "++base.stringRep++")"
   local instance (priority := low) ZRL {P:Type u}[HeytingAlgebra P]{X A B C}
-    [base:Synth P X (C ∖ (A // (@NP B)))]
-    : Synth P X ((C % (@NP B)) ∖ (A // (@NP B))) where
+    [base:Synth P X (C ∖∖ (A /// (@NP B)))]
+    : Synth P X ((C % (@NP B)) ∖∖ (A /// (@NP B))) where
     denotation := fun x y => base.denotation (x y) y
     stringRep := "(Z>< "++base.stringRep++")"
   local instance (priority := low) ZLL {P:Type u}[HeytingAlgebra P]{X A B C}
-    [base:Synth P X (C ∖ ((@NP B) ∖ A))]
-    : Synth P X ((C % (@NP B)) ∖ ((@NP B) ∖ A)) where
+    [base:Synth P X (C ∖∖ ((@NP B) ∖∖ A))]
+    : Synth P X ((C % (@NP B)) ∖∖ ((@NP B) ∖∖ A)) where
     denotation := fun x y => base.denotation (x y) y
     stringRep := "(Z<< "++base.stringRep++")"
       -/
@@ -111,38 +113,38 @@ namespace DiffJacobson
   /-- A condensation of `GR` and `SynthRApp` -/
   scoped instance DAppGR {P:Type u}[HeytingAlgebra P]{X mid Y A B C}
     [StrictSubList X mid][StrictSubList mid Y]
-    [f:DSynth P X mid (A // B)][arg:DSynth P mid Y (B % (@NP C))]
+    [f:DSynth P X mid (A /// B)][arg:DSynth P mid Y (B % (@NP C))]
     : DSynth P X Y (A % (@NP C)) where
     dsem := fun c => f.dsem (arg.dsem c)
   /-- A condensation of `GL` and `SynthLApp` -/
   scoped instance DAppGL {P:Type u}[HeytingAlgebra P]{X mid Y A B C}
     [StrictSubList X mid][StrictSubList mid Y]
-    [arg:DSynth P X mid (B % (@NP C))][f:DSynth P mid Y (B ∖ A)]
+    [arg:DSynth P X mid (B % (@NP C))][f:DSynth P mid Y (B ∖∖ A)]
     : DSynth P X Y (A % (@NP C)) where
     dsem := fun c => f.dsem (arg.dsem c)
   scoped instance DAppZRR {P:Type u}[HeytingAlgebra P]{X mid Y A B C}
     [StrictSubList X mid][StrictSubList mid Y]
-    [f:DSynth P X mid ((A // (@NP B)) // C)][arg:DSynth P mid Y (C % (@NP B))]
-    : DSynth P X Y (A // (@NP B)) where
+    [f:DSynth P X mid ((A /// (@NP B)) /// C)][arg:DSynth P mid Y (C % (@NP B))]
+    : DSynth P X Y (A /// (@NP B)) where
     dsem := fun n => f.dsem (arg.dsem n) n
   scoped instance DAppZLR {P:Type u}[HeytingAlgebra P]{X mid Y A B C}
     [StrictSubList X mid][StrictSubList mid Y]
-    [f:DSynth P X mid (((@NP B) ∖ A) // C)][arg:DSynth P mid Y (C % (@NP B))]
-    : DSynth P X Y ((@NP B) ∖ A) where
+    [f:DSynth P X mid (((@NP B) ∖∖ A) /// C)][arg:DSynth P mid Y (C % (@NP B))]
+    : DSynth P X Y ((@NP B) ∖∖ A) where
     dsem := fun n => f.dsem (arg.dsem n) n
   scoped instance DAppZRL {P:Type u}[HeytingAlgebra P]{X mid Y A B C}
     [StrictSubList X mid][StrictSubList mid Y]
-    [arg:DSynth P X mid (C % (@NP B))][f:DSynth P mid Y (C ∖ (A // (@NP B)))]
-    : DSynth P X Y (A // (@NP B)) where
+    [arg:DSynth P X mid (C % (@NP B))][f:DSynth P mid Y (C ∖∖ (A /// (@NP B)))]
+    : DSynth P X Y (A /// (@NP B)) where
     dsem := fun n => f.dsem (arg.dsem n) n
   scoped instance DAppZLL {P:Type u}[HeytingAlgebra P]{X mid Y A B C}
     [StrictSubList X mid][StrictSubList mid Y]
-    [arg:DSynth P X mid (C % (@NP B))][f:DSynth P mid Y (C ∖ ((@NP B) ∖ A))]
-    : DSynth P X Y (A // (@NP B)) where
+    [arg:DSynth P X mid (C % (@NP B))][f:DSynth P mid Y (C ∖∖ ((@NP B) ∖∖ A))]
+    : DSynth P X Y (A /// (@NP B)) where
     dsem := fun n => f.dsem (arg.dsem n) n
 
   -- For now we'll keep the word 'the' under wraps as well
-  scoped instance (priority := high) the_lex {P}[HeytingAlgebra P]{T}: lexicon P "the" ((@NP T % @NP T) // (@CN T)) where
+  scoped instance (priority := high) the_lex {P}[HeytingAlgebra P]{T}: lexicon P "the" ((@NP T % @NP T) /// (@CN T)) where
     denotation := fun _cn x => x
   /- Another difficulty here is that for modified CNs (those that don't just denote true), this definition discards the restriction --- e.g., 'the even number' could resolve to an 'odd number'!
 
@@ -164,9 +166,9 @@ set_option maxHeartbeats 400000
 -- Let's confirm the proof theory is complete enough to find this
 def three_is_even_parse : DSynth Prop ("three"::"is"::"even"::[]) [] S :=
   let three : DSynth Prop ("three"::"is"::"even"::[]) ("is"::"even"::[]) (@NP Nat):= DLex (l:=threelex)
-  let is : DSynth Prop ("is"::"even"::[]) ("even"::[]) (((@NP Nat) ∖ S) // (@ADJ Nat)):= DLex (l:=noun_is_adj_lex)
+  let is : DSynth Prop ("is"::"even"::[]) ("even"::[]) (((@NP Nat) ∖∖ S) /// (@ADJ Nat)):= DLex (l:=noun_is_adj_lex)
   let even : DSynth Prop ("even"::[]) [] (@ADJ Nat) := DLex (l:=evenlex)
-  let is_even : DSynth Prop ("is"::"even"::[]) [] ((@NP Nat) ∖ S) := DRApp (L:=is) (R:=even)
+  let is_even : DSynth Prop ("is"::"even"::[]) [] ((@NP Nat) ∖∖ S) := DRApp (L:=is) (R:=even)
   DLApp (L:=three) (R:=is_even)
 #check three_is_even_parse.dsem
 
@@ -180,7 +182,7 @@ def three_is_even_pf : three_is_even_diff :=
 -- hack experiment to play with left-side multi-word constituents
 instance length_lex : lexicon Prop "length" (@NP (String -> Nat)) where
   denotation := String.length
-instance my_lex {A} : lexicon Prop "my" ((@NP A) // (@NP (String -> A))) where
+instance my_lex {A} : lexicon Prop "my" ((@NP A) /// (@NP (String -> A))) where
   denotation f := f "my"
 
 def hack_ : dspec ("my"::"length"::"is"::"even"::[]) :=
@@ -244,24 +246,24 @@ def dbgdspec (P:Type u) (X Y : List String)[StrictSubList X Y] (C:Cat) [D:DSynth
 
 
 def contents_nil_inv_spec_d_manual_400K : DSynth Prop ("any"::"list"::"of"::"value"::"is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) [] S :=
-  let any_list_of_value := dbgdspec Prop ("any"::"list"::"of"::"value"::"is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) (S // ((@NP (List value)) ∖ S)) 
-  let is_empty := dbgdspec Prop ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) ("when"::"its"::"contents"::"are"::"empty"::[]) ((@NP (List value)) ∖ S)
+  let any_list_of_value := dbgdspec Prop ("any"::"list"::"of"::"value"::"is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) (S /// ((@NP (List value)) ∖∖ S)) 
+  let is_empty := dbgdspec Prop ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) ("when"::"its"::"contents"::"are"::"empty"::[]) ((@NP (List value)) ∖∖ S)
   -- Yet again, we can't infer semantics for "its contents" even though it's totally trivial. Something about the lexical entries involved are not playing nice with Lean's unification.
   --let its_contents := dbgdspec Prop ("its"::"contents"::"are"::"empty"::[]) ("are"::"empty"::[]) ((@NP multiset) % (@NP (List value)))
   --let its_contents_manual : DSynth Prop ("its"::"contents"::"are"::"empty"::[]) ("are"::"empty"::[]) ((@NP multiset) % (@NP (List value))) :=
   --  DRApp (L:= DLex (l := its_ref)) (R:=DLex (l := contents_lex))
   -- Even with the above manual construction lifted as before to a hack instance, this next bit fails to parse, suggesting a bug in the port of the Jacobson specialization... Ah, yes, it helps to actually open the module with the required local instances
   --let its_contents_are_empty := dbgdspec Prop ("its"::"contents"::"are"::"empty"::[]) [] (S % (@NP (List value)))
-  let when_its_contents_are_empty := dbgdspec Prop ("when"::"its"::"contents"::"are"::"empty"::[]) [] (((@NP (List value)) ∖ S) ∖ ((@NP (List value)) ∖ S))
-  --let is_empty_when_its_contents_are_empty := dbgdspec Prop ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) [] ((@NP (List value)) ∖ S)
+  let when_its_contents_are_empty := dbgdspec Prop ("when"::"its"::"contents"::"are"::"empty"::[]) [] (((@NP (List value)) ∖∖ S) ∖∖ ((@NP (List value)) ∖∖ S))
+  --let is_empty_when_its_contents_are_empty := dbgdspec Prop ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) [] ((@NP (List value)) ∖∖ S)
   --DRapp (L:=any_list_of_value) (R:=is_empty_when_its_contents_are_empty)
   (any_list_of_value,is_empty,when_its_contents_are_empty)
 
 set_option synthInstance.maxHeartbeats 8000000
 set_option maxHeartbeats 8000000
 def contents_nil_inv_spec_d_manual_too_much_for_400K : DSynth Prop ("any"::"list"::"of"::"value"::"is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) [] S :=
-  let any_list_of_value := dbgdspec Prop ("any"::"list"::"of"::"value"::"is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) (S // ((@NP (List value)) ∖ S)) 
-  let is_empty_when_its_contents_are_empty := dbgdspec Prop ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) [] ((@NP (List value)) ∖ S)
+  let any_list_of_value := dbgdspec Prop ("any"::"list"::"of"::"value"::"is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) (S /// ((@NP (List value)) ∖∖ S)) 
+  let is_empty_when_its_contents_are_empty := dbgdspec Prop ("is"::"empty"::"when"::"its"::"contents"::"are"::"empty"::[]) [] ((@NP (List value)) ∖∖ S)
   DRApp (L:=any_list_of_value) (R:=is_empty_when_its_contents_are_empty)
   --(any_list_of_value,is_empty_when_its_contents_are_empty)
 

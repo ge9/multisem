@@ -1,4 +1,5 @@
 import Multisem.HeytingAlgebras
+open multisem_fix_ns
 
 def StateFormula (T : Type u) := T -> Prop
 

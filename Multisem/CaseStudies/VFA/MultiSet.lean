@@ -50,9 +50,9 @@ section specs
       denotation := λ f => ∀ a b c, f a (f b c) = f (f a b) c
     instance comm {T:Type}: lexicon Prop "commutative" (@ADJ (T -> T -> T)) where
       denotation := λ f => ∀ a b, f a b = f b a
-    instance preserves_lex {X Y : Type}: lexicon Prop "preserves" (((@NP (X -> X)) ∖ S) // (@NP (X -> Y))) where
+    instance preserves_lex {X Y : Type}: lexicon Prop "preserves" (((@NP (X -> X)) ∖∖ S) /// (@NP (X -> Y))) where
       denotation prop f := ∀ x, prop x = prop (f x)
-    instance the_X_of_Y {X Y : Type}: lexicon Prop "the" (((@NP Y) // (@PP X PPType.OF)) // (@NP (X -> Y))) where
+    instance the_X_of_Y {X Y : Type}: lexicon Prop "the" (((@NP Y) /// (@PP X PPType.OF)) /// (@NP (X -> Y))) where
       denotation := fun f x => f x
     instance empty_list {T:Type}: lexicon Prop "empty" (@ADJ (List T)) where
       denotation := λ l => l = []
@@ -61,25 +61,25 @@ section specs
       It seems to be in the same spirit as e.g. `Multisem.Grammar.Jacobson.ZRR`, but the version of Jacobson's
       work I took that from (Gerhard 2005) didn't address anaphora across coordinators.
     -/
-    instance if_lift_ref {A:Type}: lexicon Prop "if" ((((@NP A) ∖ S) ∖ ((@NP A) ∖ S)) // (S % (@NP A))) where
+    instance if_lift_ref {A:Type}: lexicon Prop "if" ((((@NP A) ∖∖ S) ∖∖ ((@NP A) ∖∖ S)) /// (S % (@NP A))) where
       denotation := λ r l x => r x -> l x
-    instance when_lwhent_ref {A:Type}: lexicon Prop "when" ((((@NP A) ∖ S) ∖ ((@NP A) ∖ S)) // (S % (@NP A))) where
+    instance when_lwhent_ref {A:Type}: lexicon Prop "when" ((((@NP A) ∖∖ S) ∖∖ ((@NP A) ∖∖ S)) /// (S % (@NP A))) where
       denotation := λ r l x => r x -> l x
-    instance its_ref {A B:Type}: lexicon Prop "its" (((@NP B) % (@NP A)) // (@NP (A -> B))) where
+    instance its_ref {A B:Type}: lexicon Prop "its" (((@NP B) % (@NP A)) /// (@NP (A -> B))) where
       denotation := λ p a => p a
-    instance any_head {A:Type}: lexicon Prop "any" ((S // ((@NP A) ∖ S)) // (@CN A)) where
+    instance any_head {A:Type}: lexicon Prop "any" ((S /// ((@NP A) ∖∖ S)) /// (@CN A)) where
       denotation := λ p rest => ∀ (x:A), p x -> rest x
-    instance are_adj_lex {A:Type}: lexicon Prop "are" (((@NP A) ∖ S) // (@ADJ A)) where
+    instance are_adj_lex {A:Type}: lexicon Prop "are" (((@NP A) ∖∖ S) /// (@ADJ A)) where
       denotation := λ p x => p x
 
-    instance iff_prop : lexicon Prop "iff" ((S ∖ S) // S) where
+    instance iff_prop : lexicon Prop "iff" ((S ∖∖ S) /// S) where
       denotation x y := x <-> y
 
     -- These should be obtained by lifting other entries, but for now we'll define them manually
     -- This is slightly odd because it's conceivable the 'v' portion might be more than a variable
-    instance every_named {A}{w}: lexicon Prop "every" (((S // (S % (@Var A w))) // ((@NP A) % (@Var A w))) // (@CN A)) where
+    instance every_named {A}{w}: lexicon Prop "every" (((S /// (S % (@Var A w))) /// ((@NP A) % (@Var A w))) /// (@CN A)) where
       denotation cn _v rest := ∀ (a:A), cn a -> rest a
-    --instance and_named_coord {A B}{w v} : lexicon Prop "and" ((S // (S % (@Var A w))) ∖ S) // (S // (S % (@Var B v))) where
+    --instance and_named_coord {A B}{w v} : lexicon Prop "and" ((S /// (S % (@Var A w))) ∖∖ S) /// (S /// (S % (@Var B v))) where
     --  denotation rhs lhs := 
   end relocate_later
 
@@ -91,11 +91,11 @@ section specs
       denotation := contents
     instance sort_np : lexicon Prop "sort" (@NP  (List value -> List value)) where
       denotation := sort.sort
-    instance sorts_lex2 : lexicon Prop "sorts" ((@NP (List value -> List value)) ∖ S) where
+    instance sorts_lex2 : lexicon Prop "sorts" ((@NP (List value -> List value)) ∖∖ S) where
       denotation f := ∀ l, sort.sorted (f l)
     instance empty_multiset : lexicon Prop "empty" (@ADJ multiset) where
       denotation := λ ms => ∀ x, 0 = ms x
-    instance permutation_list : lexicon Prop "permutation" ((@CN (List value)) // (@PP (List value) PPType.OF)) where
+    instance permutation_list : lexicon Prop "permutation" ((@CN (List value)) /// (@PP (List value) PPType.OF)) where
       denotation := λ a b => sort.Permutation a b 
   end locallex
 
@@ -106,5 +106,5 @@ section specs
      Ideally I could read a solution to the first straight out of Ranta, though I could probably just tweak Jacobson's approach to work with a "named NP" construct used only for the 'hole' with discourse referents, coupled with named-quantifier forms "any list l"). Plus a tag/decl typeclass for marking which identifiers can be converted to variable references (via a lexicon instance). This is basically two minor variations on a single extension, and gets us through this chapter's specs.
   -/
 
-  instance insertion_func : lexicon Prop "insertion" ((@NP (List value -> List value)) // (@PP value PPType.OF)) := sort.sort_specs.insertion_func
+  instance insertion_func : lexicon Prop "insertion" ((@NP (List value -> List value)) /// (@PP value PPType.OF)) := sort.sort_specs.insertion_func
   instance val_noun : lexicon Prop "value" (@CN value) := { denotation := fun _ => True }
