@@ -14,7 +14,7 @@ attribute [simp, multisem_simps] Synth.denotation
 -- Implementing this (and for that matter, requiring Synth.stringRep)
 -- lets us print the result of a call to specwitness
 instance (P:Type u)(ws:ContextTree MathWord) (c:Cat) : Repr (Synth P ws c) where
-  reprPrec inst n := inst.stringRep
+  reprPrec inst _ := inst.stringRep
 
 
 

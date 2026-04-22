@@ -37,7 +37,7 @@ syntax (name := splitParser) "[|" ident+ "|]": term
     do
       --let info <- Lean.MonadRef.mkInfoFromRefPos;
       match text with
-      | Lean.Syntax.node _ _ mid => buildAppend val mid.data
+      | Lean.Syntax.node _ _ mid => buildAppend val mid.toList
       | _ => pure (Lean.Syntax.mkNumLit (toString argc))
       --pure (Lean.Syntax.mkStrLit stext)
 def blahh := [| four equals four |]
