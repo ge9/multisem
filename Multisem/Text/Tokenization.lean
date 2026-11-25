@@ -180,7 +180,6 @@ def checkStrAssumption : String.mk ['a'] = "a" :=
 #print UInt32.isValidChar
 #print Nat.isValidChar
 theorem sp_is_valid : UInt32.isValidChar 32 :=
-  by simp
+  by decide
 
 #eval (Char.mk 32 sp_is_valid)
-

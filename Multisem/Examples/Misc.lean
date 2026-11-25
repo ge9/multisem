@@ -87,13 +87,13 @@ def three_is_nonnegative_and_four_is_even := (pspec ("three" # ("is" # ("non-neg
 def example5 := pspec [|every natural is nonnegative and some natural is even|]
 
 theorem exmisc : three_is_nonnegative_and_four_is_even :=
-  by simp
+  by simp; decide
 
 @[simp]
 def every_natural_is_nonneg_and_some_natural_is_even := (pspec ("every" # ("natural" # ("is" # ("non-negative" # ("and" # ("some" # ("natural" # ("is" # "even")))))))))
 theorem exmisc3 : every_natural_is_nonneg_and_some_natural_is_even :=
   by simp
-     apply (Exists.intro 2); simp
+     apply (Exists.intro 2); decide
 
 @[simp]
 def every_natural_is_nonneg_and_nonneg := (pspec ("every" # ("natural" # ("is" # ("non-negative" # ("and" # ("is" # "non-negative")))))))

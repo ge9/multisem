@@ -209,27 +209,27 @@ def insert_sorted_spec_manual : DSynth Prop lin (lin<<"insertion"<<"of"<<"any"<<
 -- VFA Sort examples
 def insert_sorted_spec'' : insert_sorted_spec -> dspec (lin<<"insertion"<<"of"<<"any"<<"natural"<<"maintains"<<"sortedness") :=
   by simp [insert_sorted_spec]
-     intro H
-     apply H
+    --  intro H
+    --  apply H
 
   def sort_sorted_spec' : sort_sorted_spec -> dspec (lin<<"sort"<<"sorts"<<"any"<<"list"<<"of"<<"naturals") :=
     by simp [sort_sorted_spec]
-       intro H 
-       apply H
+      --  intro H 
+      --  apply H
 
   def insert_perm_spec' := dspec (lin<<"insert"<<"is"<<"a"<<"permutation"<<"of"<<"cons")
 
   def sort_perm_spec' : 
     sort_perm_spec -> dspec (lin<<"sort"<<"is"<<"a"<<"permutation") :=
     by simp [sort_perm_spec]
-       intro H
-       exists sort
+      --  intro H
+      --  exists sort
   def insertion_sort_correct_spec' : insertion_sort_correct_spec -> dspec (lin<<"sort"<<"is"<<"a"<<"sorting"<<"permuting"<<"algorithm") :=
     by simp [insertion_sort_correct_spec]
        simp [is_a_sorting_algorithm]
        intro H
-       exists sort
-       simp
+      --  exists sort
+      --  simp
        apply And.intro
        . intro l
          match (H l) with

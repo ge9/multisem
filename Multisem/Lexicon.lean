@@ -1,6 +1,10 @@
 import Multisem.Grammar
 open Cat
 
+open multisem_fix_ns
+
+instance myExprNatlex {n:Nat} {P}: lexicon P (Sum.inr ⟨n⟩) (NPExpr) := { denotation := ⟨n+0⟩}
+
 def asNat (n:Nat) := n
 def odd (n:Nat) : Bool :=
   match n with
@@ -32,7 +36,7 @@ instance noun_is_adj_lex {T}{P}: lexicon P "is" (((@NP T) ∖∖ S) /// (@ADJ T)
 instance noun_is_noun_lex {T}: lexicon Prop "is" (((@NP T) ∖∖ S) /// (@NP T)) where
   denotation := fun a n => a = n
 -- TODO: not really sure about how classic syntacticians would feel about this, which abuses the fact that adjectives and CNs have the same semantics
-instance a_cn_as_adj {C:Cat}{H}[HeytingAlgebra H]{T:Type} 
+instance a_cn_as_adj {C:Cat}{H}[HeytingAlgebra H]{T:Type}
   : lexicon H "a" (((C /// (@ADJ T)) ∖∖ C) /// (@CN T)) where
   denotation := λ cn other => other cn
 
@@ -45,7 +49,7 @@ instance or_coord (P:Type u)[HeytingAlgebra P] : Coordinator P "or" where
 --#check (@synthlex _ _ "equals" _ equals_eq_lex)
 --#check @synthlapp Bs _ _ _ _ _ (@synthlex _ _ "one" (prim NP) onelex) (@synthrapp _ _ _ _ _ _ (@synthlex _ _ "equals" _ equals_eq_lex) (@synthlex _ _ "one" (prim NP) onelex))
 --
----- More dictionary entries 
+---- More dictionary entries
 --
 instance addslex : lexicon Prop "adds" ((@NP (Nat->Nat)) ∖∖ (S /// (@NP Nat))) where
   denotation (subj:Nat->Nat) (obj:Nat) := forall x, subj x = x + obj
@@ -71,14 +75,14 @@ instance forall_lex {A}: lexicon Prop "every" (quant A) where
 --
 instance nat_noun : lexicon Prop "natural" (@CN Nat) := { denotation := fun _ => True }
 --
-instance given_lex {A B}: lexicon Prop "given" ((@NP (A -> B)) ∖∖ ((@NP B) /// (@NP A))) where 
-  denotation := fun f arg => f arg 
+instance given_lex {A B}: lexicon Prop "given" ((@NP (A -> B)) ∖∖ ((@NP B) /// (@NP A))) where
+  denotation := fun f arg => f arg
 
 -- One down-side to the current macro system is that we can't have hyphens
 instance nonneg_lex : lexicon Prop "non-negative" (@ADJ Nat) where
-  denotation := fun x => 0 <= x 
+  denotation := fun x => 0 <= x
 instance nonneg_lex' : lexicon Prop "nonnegative" (@ADJ Nat) where
-  denotation := fun x => 0 <= x 
+  denotation := fun x => 0 <= x
 
 
 -- Prepositional phrases
@@ -101,8 +105,8 @@ instance into_lex (P:Type u)[HeytingAlgebra P](T:Type u) : lexicon P "into" ((@P
 -- "Classically" [a noun] is a noun phrase. But [a] has existential flavor,
 -- while other noun phrases are simply individuals. So the trick is that
 -- determiners in English compose on the right with some noun, but
--- the result is not a noun phrase: it's something that can be used in 
--- all the same places as a noun phrase, but actually has a separate 
+-- the result is not a noun phrase: it's something that can be used in
+-- all the same places as a noun phrase, but actually has a separate
 -- grammatical type so it can have different semantics.
 -- Thus, the word 'a' has a type that combines with a noun on the right,
 -- and then "something" on the left that's looking for a noun phrase to
@@ -112,10 +116,10 @@ instance into_lex (P:Type u)[HeytingAlgebra P](T:Type u) : lexicon P "into" ((@P
 -- further generalization in the future.
 -- This has args in Type rather than Type u b/c it's a Prop entry
 -- We could generalize that bit directly to any cylindrical algebra
-instance a_directobject {A:Type}{B:Type} : lexicon Prop "a" 
+instance a_directobject {A:Type}{B:Type} : lexicon Prop "a"
   (((((@NP B) ∖∖ S) /// (@NP A)) ∖∖ ((@NP B) ∖∖ S)) /// (@CN A)) where
   denotation (cn:interp Prop (@CN A)) frag := fun subj => ∃ (a:A), cn a /\ frag a subj
-instance any_directobject {A:Type}{B:Type} : lexicon Prop "any" 
+instance any_directobject {A:Type}{B:Type} : lexicon Prop "any"
   (((((@NP B) ∖∖ S) /// (@NP A)) ∖∖ ((@NP B) ∖∖ S)) /// (@CN A)) where
   denotation (cn:interp Prop (@CN A)) frag := fun subj => ∀ (a:A), cn a -> frag a subj
 -- We can lift any adjective to a modifier of common nouns
@@ -128,9 +132,9 @@ instance naturals_lex : lexicon Prop "naturals" (@CN Nat) where
 instance natural_lex : lexicon Prop "natural" (@CN Nat) where
   denotation _ := True
 instance equals_eq_lex {T}: lexicon Prop "equals" (((@NP T) ∖∖ S) /// (@NP T)) where
-  denotation := fun r l => r = l 
+  denotation := fun r l => r = l
 instance equal_eq_lex {T}: lexicon Prop "equal" (((@NP T) ∖∖ S) /// (@NP T)) where
-  denotation := fun r l => r = l 
+  denotation := fun r l => r = l
 
 -- This is of course highly overspecialized, but the right general-purpose definition of 'algorithm' in a dependent type theory is itself a reasonably deep philosophical question
 instance algorithm_basic {T:Type}: lexicon Prop "algorithm" (@CN (List T -> List T)) where
@@ -139,6 +143,6 @@ instance algorithm_basic {T:Type}: lexicon Prop "algorithm" (@CN (List T -> List
 instance list_lex {P:Type u}[HeytingAlgebra P]{T:Type u}: lexicon P "list" ((@CN (List T)) /// (@PP T PPType.OFN)) where
   denotation _ := fun _ => HeytingAlgebra.top
 
-instance any_ppobject {A:Type}{C:Cat} : lexicon Prop "any" 
+instance any_ppobject {A:Type}{C:Cat} : lexicon Prop "any"
   (((C /// (@NP A)) ∖∖ (S /// (C ∖∖ S))) /// (@CN A)) where
   denotation (cn:interp Prop (@CN A)) frag tail := ∀ (a:A), cn a -> tail (frag a)

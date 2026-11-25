@@ -7,11 +7,11 @@ class HeytingAlgebra.{u} (P:Type u) where
   conj : P -> P -> P
   disj : P -> P -> P
   impl : P -> P -> P
-attribute [simp] HeytingAlgebra.top
-attribute [simp] HeytingAlgebra.bottom
-attribute [simp] HeytingAlgebra.conj
-attribute [simp] HeytingAlgebra.disj
-attribute [simp] HeytingAlgebra.impl
+attribute [simp, multisem_simps] HeytingAlgebra.top
+attribute [simp, multisem_simps] HeytingAlgebra.bottom
+attribute [simp, multisem_simps] HeytingAlgebra.conj
+attribute [simp, multisem_simps] HeytingAlgebra.disj
+attribute [simp, multisem_simps] HeytingAlgebra.impl
 
 /-- A child class which imposes the actual laws.
   We omit the laws from `HeytingAlgebra` because we're mostly interested in the interface to the logic, not necessarily its properties. It is convenient to be able to define just the basic HA structure without proving all the laws, when we're just axiomatizing existing well-known logics.

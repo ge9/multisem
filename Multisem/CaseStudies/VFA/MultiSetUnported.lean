@@ -5,9 +5,10 @@ import Multisem.CaseStudies.VFA.MultiSet
 import Multisem.TreeSynth
 open Cat
 open TreeSpecs
-open multisem_fix_ns
 set_option synthInstance.checkSynthOrder false
 
+set_option checkBinderAnnotations false
+open multisem_fix_ns
   -- Equivalence of Permutation and Multiset Specifications
   -- These require dealing with two lists manipulated in various ways
   -- They also require a range of general list manipulations, which could be generally useful

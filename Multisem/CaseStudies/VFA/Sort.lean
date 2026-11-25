@@ -15,15 +15,14 @@ namespace sort
     | [] => []
     | h :: t => insert h (sort t)
 
-  inductive sorted : List Nat -> Prop :=
+  inductive sorted : List Nat -> Prop where
   | sorted_nil : sorted []
   | sorted_1 : ∀ x, sorted [x]
   | sorted_cons : ∀ x y l, x ≤ y -> sorted (y :: l) -> sorted (x :: y :: l)
 
-  #check List.get!
-  def sorted'' (al : List Nat) := forall i j, i < j -> j < List.length al -> List.get! al i ≤ List.get! al j
-  def sorted' (al : List nat) := forall i j iv jv,
-    i < j -> List.get? al i = some iv -> List.get? al j = some jv
+  def sorted'' (al : List Nat) := forall i j, i < j -> j < List.length al -> al[i]! ≤ al[j]!
+  def sorted' (al : List nat) := forall (i: Nat) (j: Nat) iv jv,
+    i < j -> al[i]? = some iv -> al[j]? = some jv
 
   axiom Permutation {A : Type u}: List A -> List A -> Prop
 
@@ -83,7 +82,7 @@ namespace sort_specs
   -- Original was: insertion maintains sortedness
   -- Candidate: insertion of any natural maintains sortedness
   --#print insert_sorted_spec
-  --def insert_sorted_spec' : 
+  --def insert_sorted_spec' :
   --  insert_sorted_spec =
   --  pspec [| insertion of any natural maintains sortedness |] :=
   --by simp [insert_sorted_spec]
@@ -96,7 +95,7 @@ namespace sort_specs
 --  #print sort_sorted_spec
 --  def sort_sorted_spec' : sort_sorted_spec -> pspec [| sort sorts any list of naturals|] :=
 --    by simp [sort_sorted_spec]
---       intro H 
+--       intro H
 --       apply H
 
   -- No original English, this is a proposal
@@ -107,7 +106,7 @@ namespace sort_specs
   --def insert_perm_spec' := pspec [| insert is a permutation of cons |]
 
   -- Handling the original
-  --def sort_perm_spec' : 
+  --def sort_perm_spec' :
   --  sort_perm_spec -> pspec [| sort is a permutation |] :=
   --  by simp [sort_perm_spec]
   --     intro H

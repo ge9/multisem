@@ -5,9 +5,10 @@ import Multisem.TemporalLogic
 -- Need this to do #eval
 import Lean
 open multisem_fix_ns
-
 universe u v t
 
+inductive ExprNat : Type
+| mk (n: Nat) : ExprNat
 /--
 The enumeration of supported prepositional phrase varieties for English
 -/
@@ -20,15 +21,17 @@ inductive Cat.{q} : Type (q+1)  :=
 | CN : forall {x:Type q}, Cat
 | PP : forall {x:Type q}, PPType -> Cat
 | Ref : Cat -> Cat -> Cat
-| rslash : Cat  -> Cat  -> Cat 
-| lslash : Cat  -> Cat  -> Cat 
+| rslash : Cat  -> Cat  -> Cat
+| lslash : Cat  -> Cat  -> Cat
 | Var : forall {x:Type q}, String -> Cat
+| TactS : Cat --looks similar to S, but interpreted as a tactic syntax (with "hole"s)
+| NPExpr : Cat
 open Cat
 
 -- These are some currently-disabled notations for writing the slashes
 -- At the moment we can't get lexicon entries working with a mix of explicit and notation-based categories, which we need for backwards compat right now
 -- We can allow writing right slashes by implementing Div for Cat
-/- 
+/-
   We're dropping the div typeclass instance. Going this route adds noticeable overhead,
   so we've been using the custom `///` notation below, but leaving this instance open
   has caused issues with accidentally using `/` instead of `///` in lexicon entries,
@@ -68,17 +71,17 @@ instance CatMod.{q} : Mod (Cat.{q}) where
 --deriving instance Repr for Cat
 def catrepr (c:Cat) : Lean.Format :=
     match c with
-    | S => "S" | NP => "NP" | ADJ => "ADJ" | CN => "CN" 
+    | S => "S" | NP => "NP" | ADJ => "ADJ" | CN => "CN"
     | PP pp => "PP["++(Repr.reprPrec pp 0)++"]"
     | Ref l r => "("++(catrepr l)++" % "++(catrepr r)++")"
     | rslash l r => "("++(catrepr l)++" / "++(catrepr r)++")"
     | lslash l r => "("++(catrepr l)++" \\ "++(catrepr r)++")"
     | Var v => "$"++v
+    | TactS => "S" | NPExpr => "NPExpr"
 instance catRepr : Repr Cat where
   reprPrec c _n := catrepr c
 
 
-#eval reprPrec (rslash (lslash S S) S) 234
 #eval (rslash (lslash (@NP Nat) S) (@ADJ Nat))
 
 --axiom polyunit.{α} : Type α
@@ -90,8 +93,11 @@ instance catRepr : Repr Cat where
 def polyunit.{α} : Type α := ULift Unit
 def pu.{α} : polyunit.{α} := ULift.up ()
 
+-- a list of (number, syntax)
+abbrev IndexedSyntax := Lean.AssocList Nat (Lean.Syntax)
+abbrev HoledTacticSyntax := ULift (ReaderT IndexedSyntax Lean.Elab.Tactic.TacticM (Lean.TSyntax `tactic))
 -- We do Lambek-style interpretation of lslash
-@[simp]
+@[simp, multisem_simps]
 def interp.{q} (P:Type q) (c:Cat.{q}) : Type q :=
   match c with
   | S => P
@@ -105,14 +111,16 @@ def interp.{q} (P:Type q) (c:Cat.{q}) : Type q :=
   -- The variety of prepositional phrase has not semantic content, they're basically syntactic tags for disambiguation
   | @PP x PPType.OFN => x -> P -- This is a bit of a hack to make stuff like "of naturals" work, but I haven't found a clear discussion of "of CN" in the literature yet
   | @PP x _ => x
+  | TactS => HoledTacticSyntax -- tactic syntax with "indexed holes"
+  | NPExpr => ULift Nat
 
 class Coordinator (P:Type u)[HeytingAlgebra P](w:String) where
   denoteCoord : P -> P -> P
-attribute [simp] Coordinator.denoteCoord
+attribute [simp, multisem_simps] Coordinator.denoteCoord
 
 class SurfaceHeytingAlgebra (P:Type u) (n:Nat) (C:Cat.{u}) where
   combineProps : (P -> P -> P) -> interp P C -> interp P C -> interp P C
-attribute [simp] SurfaceHeytingAlgebra.combineProps
+attribute [simp, multisem_simps] SurfaceHeytingAlgebra.combineProps
 
 
 -- TODO: Study how to rework combineProps in terms of pointwise lifting
@@ -122,8 +130,8 @@ attribute [simp] SurfaceHeytingAlgebra.combineProps
 -- This isn't quite the (pointwise lifting) homomorphism, but instead
 -- an embedding of the operation itself rather than the *result* of the operation
 -- Are we dealing with a kind of adjunction between P and X->P? Maybe, but
--- while one direction of such an adjunction would certainly be the 
--- pointwise lifting, the other direction seems like it can't be defined 
+-- while one direction of such an adjunction would certainly be the
+-- pointwise lifting, the other direction seems like it can't be defined
 -- without a spare X lying around, so it's not an adjunction.
 -- And the partial adjunction that just maps ```λ_.h``` to h isn't related to this lifting. The solution is constrained by a kind of type-driven translation, but that's not an algebraic characterization of the resulting transformation.
 
@@ -144,9 +152,26 @@ instance rSlashHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[Su
 instance refHeytingAlgebra (P:Type u)[HeytingAlgebra P]{n:Nat}(C C' : Cat)[SurfaceHeytingAlgebra P n C'] : SurfaceHeytingAlgebra P (Nat.succ n) (C' % C) where
   combineProps op d1 d2 := fun x => SurfaceHeytingAlgebra.combineProps n op (d1 x) (d2 x)
 
-class lexicon.{q} (P : Type q) (w:String) (c:Cat.{q}) where
-  denotation : interp P c 
-attribute [simp] lexicon.denotation
+abbrev MathWord := Sum String ExprNat
+instance : Coe String MathWord where
+  coe a := Sum.inl a
+instance : Coe ExprNat MathWord where
+  coe n := Sum.inr n
+instance : Coe Nat MathWord where
+  coe n := Sum.inr ⟨n⟩
+instance (n : Nat ): OfNat ExprNat n where
+  ofNat := ⟨n⟩
+instance (n : Nat ): OfNat MathWord n where
+  ofNat := n
+def MathWord.toString : MathWord → String
+| Sum.inl a => a
+| Sum.inr _ => "(num)"-- n.toString
+instance : ToString MathWord where
+  toString n := n.toString
+
+class lexicon.{q} (P : Type q) (w:MathWord) (c:Cat.{q}) where
+  denotation : interp P c
+attribute [simp, multisem_simps] lexicon.denotation
 
 class NLVar (s:String) where
 
@@ -165,23 +190,23 @@ instance coordLexicon (P:Type)[HeytingAlgebra P](w:String) (C:Cat)[Coordinator P
 -- TODO: Add support for HA-polymorphic lexicon entries at all levels (currently we only get Type)
 
 -- For now, this will do. It's not ideal because the instance is unnamed, which will make some things harder to debug when stuff goes wrong, but this is a workable solution in the medium-term
-macro "lex" n:ident "for" P:term "as" c:term : command => 
+macro "lex" n:ident "for" P:term "as" c:term : command =>
   let s := n.getId.toString
   -- This id has type Lean.Ident (no surprise given the construtor), but splicing it in as the instance name with $(id) calls .raw, which requires
   -- an argument of type Lean.TSyntax `Lean.Parser.Command.namedPrio
   -- Need to read more of the metaprogramming book https://github.com/arthurpaulino/lean4-metaprogramming-book to figure this out
-  let id := (Lean.mkIdent (s ++ "_lex_"))
+  let id := (Lean.mkIdent $ Lean.Name.mkStr1 (s ++ "_lex_"))
 `(
   instance : lexicon $(P) $(Lean.quote s) $(c) := { denotation := $(n) }
 )
-macro "anylex" n:ident "as" c:term : command => 
+macro "anylex" n:ident "as" c:term : command =>
   let s := n.getId.toString
 `(
   instance {T : Type}[HA:HeytingAlgebra T]: lexicon T $(Lean.quote s) $(c) := { denotation := $(n) }
 )
 
 namespace LexSyntaxExperiments
-  -- One other possible limitation of this macro is that it only enters identifier-bound entities, so you can't directly register 15. But this is nicer that manually specifying 
+  -- One other possible limitation of this macro is that it only enters identifier-bound entities, so you can't directly register 15. But this is nicer that manually specifying
   def fifteen : Nat := 15
   lex fifteen for Prop as @Cat.NP Nat
 
